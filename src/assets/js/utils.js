@@ -955,3 +955,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+
+// Export for Node.js testing environment
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    getAcousticSkeleton,
+    censor
+  };
+}
