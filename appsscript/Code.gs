@@ -170,7 +170,6 @@ function saveAudioToDrive(data) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   } catch (e) {
     Logger.log("Sharing permission warning: " + e.toString());
-    // Continue executing and return the URL even if sharing fails
   }
 
   return file.getUrl();

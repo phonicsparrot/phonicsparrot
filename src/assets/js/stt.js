@@ -222,14 +222,14 @@ var PhonicsSTT = (function () {
       var timeout = 8000;
 
       if (self._latestTranscript && self._latestTranscript.trim().length > 0) {
-        timeout = 2500;
+        timeout = 4000;
         if (self._currentPhrase) {
           var targetWords = self._currentPhrase.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
           var spokenWords = self._latestTranscript.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
           var lastTargetWord = targetWords[targetWords.length - 1];
           var hasSpokenLast = lastTargetWord && spokenWords.indexOf(lastTargetWord) !== -1;
           if (spokenWords.length >= targetWords.length || hasSpokenLast) {
-            timeout = 1000;
+            timeout = 4000;
           }
         }
       }
