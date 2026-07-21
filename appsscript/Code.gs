@@ -61,11 +61,24 @@ function doPost(e) {
 
   var lock = LockService.getScriptLock();
   var locked = false;
-  try {
-    lock.waitLock(10000);
-    locked = true;
-  } catch (_) {
-    return respond({ result: "error", message: "System busy, please try again." });
+  var attempts = 0;
+  var maxAttempts = 3;
+  var waitTime = 5000; // initial wait time in ms
+
+  while (!locked && attempts < maxAttempts) {
+    try {
+      lock.waitLock(waitTime);
+      locked = true;
+    } catch (_) {
+      attempts++;
+      if (attempts < maxAttempts) {
+        Utilities.sleep(Math.pow(2, attempts) * 1000); // exponential backoff: 2s, 4s
+      }
+    }
+  }
+
+  if (!locked) {
+    return respond({ result: "error", message: "System busy, please try again later." });
   }
 
   try {

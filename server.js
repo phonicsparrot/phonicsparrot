@@ -53,11 +53,23 @@ function serve(res, fp) {
  * Apps Script processes doPost(e) on the initial POST and responds with 302.
  * The redirected response MUST be fetched via GET (https.get) to retrieve the JSON output.
  */
-function postToAppsScript(urlStr, payloadString, callback) {
+function postToAppsScript(urlStr, payloadString, res, callback) {
   if (!urlStr || urlStr.indexOf("YOUR_DEPLOYMENT_ID_HERE") !== -1) {
     if (callback) callback(new Error("Apps Script URL not configured"));
     return;
   }
+
+  const payloadSize = Buffer.byteLength(payloadString);
+  const MAX_PAYLOAD_SIZE = 4 * 1024 * 1024; // 4MB limit to stay well within Apps Script quotas
+  if (payloadSize > MAX_PAYLOAD_SIZE) {
+    if (res && res.writeHead) {
+      res.writeHead(413, { "Content-Type": "application/json", ...HEADERS });
+      res.end(JSON.stringify({ ok: false, error: "Payload too large. Max size is 4MB." }));
+    }
+    if (callback) callback(new Error("Payload too large (413)"));
+    return;
+  }
+
   try {
     const parsed = new URL(urlStr);
     const options = {
@@ -253,14 +265,24 @@ const server = http.createServer((req, res) => {
           }
 
           if (APPS_SCRIPT_URL) {
-            postToAppsScript(APPS_SCRIPT_URL, body, (err) => {
-              if (err) console.warn("[Google Sheets Log Warning]", err.message);
-              else console.log("[Google Sheets Log] Recorded entry successfully");
+            postToAppsScript(APPS_SCRIPT_URL, body, res, (err) => {
+              if (err) {
+                console.warn("[Google Sheets Log Warning]", err.message);
+                if (err.message !== "Payload too large (413)") {
+                  res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
+                  res.end(JSON.stringify({ ok: true }));
+                }
+              }
+              else {
+                console.log("[Google Sheets Log] Recorded entry successfully");
+                res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
+                res.end(JSON.stringify({ ok: true }));
+              }
             });
+          } else {
+            res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
+            res.end(JSON.stringify({ ok: true }));
           }
-
-          res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
-          res.end(JSON.stringify({ ok: true }));
         });
       } catch (e) {
         res.writeHead(400);
@@ -296,11 +318,13 @@ const server = http.createServer((req, res) => {
       const audioBase64 = Buffer.concat(chunks).toString("base64");
       console.log(`[Drive Proxy] Uploading audio for ${meta.student} (${meta.class}, ${meta.activity}) - Payload size: ${Math.round(audioBase64.length/1024)} KB`);
       const payload = JSON.stringify({ ...meta, audioData: audioBase64 });
-      postToAppsScript(APPS_SCRIPT_URL, payload, (err, body) => {
+      postToAppsScript(APPS_SCRIPT_URL, payload, res, (err, body) => {
         if (err) {
           console.error("[Drive Proxy Error]", err.message);
-          res.writeHead(502, { "Content-Type": "application/json", ...HEADERS });
-          res.end(JSON.stringify({ ok: false, error: err.message }));
+          if (err.message !== "Payload too large (413)") {
+            res.writeHead(502, { "Content-Type": "application/json", ...HEADERS });
+            res.end(JSON.stringify({ ok: false, error: err.message }));
+          }
           return;
         }
         console.log("[Drive Proxy Response]", body);
