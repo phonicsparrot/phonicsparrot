@@ -475,11 +475,11 @@ function processVoice(raw) {
   for (var wi = 0; wi < words.length; wi++) {
     var w = words[wi];
     
-    // Fuzzy matching against target words
+    // Fuzzy matching against target words (acoustically via phoneticLevenshtein)
     var matchedTarget = null;
     for (var ti = 0; ti < phoneme.words.length; ti++) {
       var target = phoneme.words[ti];
-      var d = levenshtein(target, w);
+      var d = phoneticLevenshtein(target, w);
       var threshold = Math.max(1, Math.floor(target.length / 3));
       if (d <= threshold) {
         matchedTarget = target;
@@ -681,7 +681,7 @@ function registerScore(scorer) {
       var matchedTarget = null;
       for (var ti = 0; ti < loserPhoneme.words.length; ti++) {
         var target = loserPhoneme.words[ti];
-        var d = levenshtein(target, w);
+        var d = phoneticLevenshtein(target, w);
         var threshold = Math.max(1, Math.floor(target.length / 3));
         if (d <= threshold) { matchedTarget = target; break; }
       }
