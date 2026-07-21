@@ -9,6 +9,103 @@
  *  - $ shortcut renamed to $id to avoid shadowing jQuery if present
  */
 
+/* ── ACOUSTIC PHONETIC ALGORITHM ────────────────────────────── */
+
+/**
+ * Computes a robust phonetic encoding for a word to evaluate acoustic similarity.
+ * Preserves vowel distinctions to keep Levenshtein edit distances accurate
+ * (so "cat" != "cot" != "cut") while collapsing tricky homophones and digraphs.
+ */
+function phoneticEncode(word) {
+  if (!word) return "";
+  var w = word.toUpperCase().replace(/[^A-Z]/g, "");
+  if (w.length === 0) return "";
+
+  var code = "";
+  var isVowel = function(c) { return "AEIOUY".indexOf(c) > -1; };
+
+  // 0. Hardcoded Homophone exceptions for KSSR edge cases
+  if (w === "CHOIR" || w === "QUIRE") return "KWAR";
+  if (w === "WEIGH" || w === "WAY") return "WA";
+  if (w === "READ") return "RID"; // Assume present tense /ri:d/ for Year 1
+  if (w === "RED") return "RED";
+  if (w === "TWO" || w === "TOO" || w === "TO") return "TU";
+
+  // 1. Handle Vowels (Crucial for Phonics)
+  w = w.replace(/EE|EA|IE|EI/g, "I"); // Long E sound family
+  w = w.replace(/OO/g, "U");          // Long U sound family
+  w = w.replace(/AI|AY|EIGH/g, "A");  // Long A sound family
+  w = w.replace(/OA|OW/g, "O");       // Long O sound family
+  w = w.replace(/OU|OW/g, "W");       // Ow sound
+  w = w.replace(/OI|OY/g, "Y");       // Oy sound
+
+  // 2. Handle Consonant Digraphs and Clusters
+  w = w.replace(/CH/g, "X");          // Ch -> X
+  w = w.replace(/SH/g, "X");          // Sh -> X
+  w = w.replace(/TH/g, "0");          // Th -> 0
+  w = w.replace(/PH/g, "F");          // Ph -> F
+  w = w.replace(/WH/g, "W");          // Wh -> W
+  w = w.replace(/CK/g, "K");          // Ck -> K
+  w = w.replace(/KN|GN|PN/g, "N");    // Kn/Gn/Pn -> N
+  w = w.replace(/WR/g, "R");          // Wr -> R
+  w = w.replace(/MB$/g, "M");         // Mb at end -> M
+
+  // 3. Main encoding loop
+  for (var i = 0; i < w.length; i++) {
+    var c = w[i];
+    var next = i < w.length - 1 ? w[i+1] : "";
+
+    // Skip duplicate letters to tighten the phonetic string
+    if (i > 0 && c === w[i-1] && c !== "C" && c !== "G") continue;
+
+    switch (c) {
+      case "A": case "E": case "I": case "O": case "U": case "Y":
+        // Keep vowels distinct to prevent "cat" == "cot" == "cut"
+        if (i > 0 && isVowel(w[i-1])) continue; // compress adjacent unhandled vowels
+        else code += c;
+        break;
+      case "B": code += "B"; break; // Keep voiced/unvoiced separate for accurate phonics
+      case "P": code += "P"; break;
+      case "C":
+        if (next === "E" || next === "I" || next === "Y") code += "S";
+        else code += "K";
+        break;
+      case "D": code += "D"; break;
+      case "T": code += "T"; break;
+      case "G":
+        if (next === "E" || next === "I" || next === "Y") code += "J";
+        else code += "G";
+        break;
+      case "K": case "Q": code += "K"; break;
+      case "H":
+        if (i > 0 && isVowel(w[i-1]) && !isVowel(next)) continue; // silent H
+        code += "H";
+        break;
+      case "V": code += "V"; break;
+      case "F": code += "F"; break;
+      case "J": code += "J"; break;
+      case "M": code += "M"; break;
+      case "N": code += "N"; break;
+      case "S": case "Z": code += "S"; break; // Z and S collapse often in speech recognition text
+      case "W": code += "W"; break;
+      case "X": code += "KS"; break;
+      case "L": code += "L"; break;
+      case "R": code += "R"; break;
+      case "0": code += "0"; break; // TH
+      default: code += c;
+    }
+  }
+
+  // 4. Final Cleanup
+  // Strip trailing silent E
+  if (code.length > 2 && code.endsWith("E") && !isVowel(code[code.length-2])) {
+    code = code.substring(0, code.length - 1);
+  }
+
+  if (code.length === 0 && w.length > 0) code = w[0]; // failsafe
+  return code;
+}
+
 /* ── PROFANITY FILTER ───────────────────────────────────────── */
 
 var PROFANITY_LIST = [
@@ -50,10 +147,20 @@ function censor(raw) {
 /* ── LEVENSHTEIN DISTANCE ───────────────────────────────────── */
 
 /**
- * Compute edit distance between two strings.
- * Used by Poem Builder for fuzzy matching of spoken words.
+ * Compute acoustic edit distance between two strings.
+ * Overhauled to use phonetic encodes rather than raw graphemes.
+ * Used by Poem Builder and Phonics Pong for fuzzy matching of spoken words.
  */
-function levenshtein(a, b) {
+function levenshtein(rawA, rawB) {
+  var a = phoneticEncode(rawA);
+  var b = phoneticEncode(rawB);
+
+  // Fallback to basic string comparison if phonetic encoder yields nothing
+  if (!a || !b) {
+    a = rawA.toUpperCase();
+    b = rawB.toUpperCase();
+  }
+
   var m = a.length;
   var n = b.length;
   // Use a flat typed array for speed
@@ -270,8 +377,8 @@ function loadLessonData() {
 
 /**
  * Check if a word CONTAINS the sound represented by an IPA phoneme.
- * Uses grapheme matching — checks if any spelling pattern for the
- * phoneme appears within the word using precise regex heuristics.
+ * Overhauled to check acoustics via phoneticEncode instead of literal
+ * string matching to support homophones and acoustic similarity.
  */
 function wordHasPhoneme(word, ipa) {
   word = word.toLowerCase().trim().replace(/[^\w]/g, "");
@@ -291,85 +398,59 @@ function wordHasPhoneme(word, ipa) {
     }
   } catch (e) {}
 
-  // 2. Fallback to rule-based heuristics
+  // 2. Acoustic matching using phoneticEncode
+  var code = phoneticEncode(word);
   var normIpa = ipa.replace("ː", ":"); 
 
   switch (normIpa) {
-    case "/eɪ/":
-      return /ays?$|ai[a-z]|eigh|ey$/.test(word) || 
-             (/a[a-z]e$/.test(word) && !/are$/.test(word)) ||
-             /^(great|break|steak)$/.test(word);
-    case "/aɪ/":
-      return /^(my|by|fly|cry|try|why|sky|dry|spy|pry|thy)$/.test(word) ||
-             /ie$|ies$|igh|ind$|ild$/.test(word) ||
-             (/i[a-z]e$/.test(word) && !/ire$/.test(word));
-    case "/i:/":
-      return (/ee|ea/.test(word) && !/^(head|bread|deaf|great|break|steak|bear|pear|wear|heart|earth|early)$/.test(word)) || 
-             /^(he|she|we|me|be)$/.test(word) ||
-             /e[a-z]e$/.test(word) ||
-             /ey$/.test(word); // e.g. key
-    case "/ɔɪ/":
-      return /oy|oi/.test(word);
-    case "/ɪ/":
-      return /i[a-z]/.test(word) && !/i[a-z]e$/.test(word) && !/ee|ea|ai|ia|ie|io|iu/.test(word);
-    case "/ʊ/":
-      return /oo[kdt]|u[l]{2}/.test(word) || /^(push|bush|put)$/.test(word);
-    case "/u:/":
-      return /oo[^kdt]|ue|ew/.test(word) || /u[a-z]e$/.test(word);
-    case "/e/":
-      return /e[a-z]/.test(word) && !/e[a-z]e$/.test(word) && !/ea|ee|ei|eo|eu/.test(word) || /^(head|bread|deaf)$/.test(word);
-    case "/æ/":
-      return /a[a-z]/.test(word) && !/a[a-z]e$/.test(word) && !/ai|ay|au|aw|ar/.test(word);
-    case "/ʌ/":
-      return /u[a-z]/.test(word) && !/u[a-z]e$/.test(word) && !/ur|ue|ui/.test(word) || /^(some|come|love|done|mother|brother|son|one|once)$/.test(word);
+    case "/eɪ/": return code.indexOf("A") > -1;
+    case "/aɪ/": return code.indexOf("A") > -1 || code.indexOf("Y") > -1 || code.indexOf("I") > -1;
+    case "/i:/": return code.indexOf("I") > -1;
+    case "/ɔɪ/": return code.indexOf("Y") > -1 || code.indexOf("O") > -1;
+    case "/ɪ/": return code.indexOf("I") > -1 || code.indexOf("E") > -1;
+    case "/ʊ/": return code.indexOf("U") > -1;
+    case "/u:/": return code.indexOf("U") > -1;
+    case "/e/": return code.indexOf("E") > -1 || code.indexOf("A") > -1;
+    case "/æ/": return code.indexOf("A") > -1;
+    case "/ʌ/": return code.indexOf("U") > -1 || code.indexOf("O") > -1;
     case "/ɑ:/":
-    case "/ɑː/":
-      return /ar/.test(word) || /^(fast|last|past|bath|path|grass|class)$/.test(word);
-    case "/ɒ/":
-      return /o[a-z]/.test(word) && !/o[a-z]e$/.test(word) && !/oo|oa|oi|oy|ou|ow|or/.test(word);
-    case "/ɪə/":
-      return /(ear|ere|eer)$/.test(word);
-    case "/ʊə/":
-      return /(our|ure)$/.test(word);
-    case "/eə/":
-      return /(air|ear|are)$/.test(word);
-    case "/əʊ/":
-      return (/ow$/.test(word) && !/^(cow|how|now|brow|plow|vow|allow)$/.test(word)) || 
-             /oa[a-z]/.test(word) || 
-             /o[a-z]e$/.test(word) || 
-             /^(go|no|so)$/.test(word);
-    case "/aʊ/":
-      return /ou/.test(word) || 
-             /^(cow|how|now|brow|plow|vow|allow)$/.test(word) ||
-             (/ow[ndl]/.test(word) && !/^(grown|blown|known|flown|shown)$/.test(word));
+    case "/ɑː/": return code.indexOf("A") > -1 || code.indexOf("R") > -1;
+    case "/ɒ/": return code.indexOf("O") > -1;
+    case "/ɪə/": return code.indexOf("I") > -1 || code.indexOf("R") > -1;
+    case "/ʊə/": return code.indexOf("U") > -1 || code.indexOf("R") > -1;
+    case "/eə/": return code.indexOf("E") > -1 || code.indexOf("A") > -1 || code.indexOf("R") > -1;
+    case "/əʊ/": return code.indexOf("O") > -1 || code.indexOf("W") > -1;
+    case "/aʊ/": return code.indexOf("O") > -1 || code.indexOf("W") > -1;
 
     // Consonants
-    case "/p/": return /p/.test(word);
-    case "/b/": return /b/.test(word);
-    case "/t/": return /t/.test(word);
-    case "/d/": return /d/.test(word);
-    case "/k/": return /[kcxq]/.test(word);
-    case "/g/": return /g/.test(word);
-    case "/f/": return /[f]|ph|gh/.test(word);
-    case "/v/": return /v/.test(word);
-    case "/s/": return /[szc]/.test(word);
-    case "/z/": return /[zs]/.test(word);
-    case "/θ/": return /th/.test(word);
-    case "/ð/": return /th/.test(word);
-    case "/ʃ/": return /sh|ch|tion|sion|cean|cial|sure|sugar/.test(word);
-    case "/ʒ/": return /si|su/.test(word);
-    case "/h/": return /h/.test(word);
-    case "/m/": return /m/.test(word);
-    case "/n/": return /n/.test(word);
-    case "/ŋ/": return /ng/.test(word);
-    case "/l/": return /l/.test(word);
-    case "/r/": return /r/.test(word);
-    case "/w/": return /w/.test(word);
-    case "/j/": return /y/.test(word);
-    case "/tʃ/": return /ch|tch/.test(word);
-    case "/dʒ/": return /[jg]/.test(word);
+    case "/p/": return code.indexOf("P") > -1;
+    case "/b/": return code.indexOf("B") > -1;
+    case "/t/": return code.indexOf("T") > -1;
+    case "/d/": return code.indexOf("D") > -1;
+    case "/k/": return code.indexOf("K") > -1 || code.indexOf("X") > -1; // Sometimes mapped to X in some dialects
+    case "/g/": return code.indexOf("G") > -1;
+    case "/f/": return code.indexOf("F") > -1;
+    case "/v/": return code.indexOf("V") > -1;
+    case "/s/": return code.indexOf("S") > -1;
+    case "/z/": return code.indexOf("S") > -1 || code.indexOf("Z") > -1;
+    case "/θ/": return code.indexOf("0") > -1;
+    case "/ð/": return code.indexOf("0") > -1;
+  case "/ʃ/": return code.indexOf("X") > -1 || code.indexOf("S") > -1;
+  case "/ʒ/": return code.indexOf("X") > -1 || code.indexOf("J") > -1 || code.indexOf("S") > -1;
+    case "/h/": return code.indexOf("H") > -1;
+    case "/m/": return code.indexOf("M") > -1;
+    case "/n/": return code.indexOf("N") > -1;
+    case "/ŋ/": return code.indexOf("N") > -1 || code.indexOf("G") > -1;
+    case "/l/": return code.indexOf("L") > -1;
+    case "/r/": return code.indexOf("R") > -1;
+    case "/w/": return code.indexOf("W") > -1;
+    case "/j/": return code.indexOf("Y") > -1 || code.indexOf("J") > -1;
+    case "/tʃ/": return code.indexOf("X") > -1 || code.indexOf("T") > -1;
+    case "/dʒ/": return code.indexOf("J") > -1;
   }
-  return false;
+
+  // Fallback to literal if unhandled
+  return word.indexOf(normIpa.replace(/\//g, "")) > -1 || /a|e|i|o|u/.test(word);
 }
 
 /* ── PERFORMANCE LOGGING (v7) ─────────────────────────────── */
