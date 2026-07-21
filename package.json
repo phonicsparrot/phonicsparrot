@@ -3,8 +3,12 @@
   "version": "0.2.0",
   "description": "Phonics Parrot — Digital Learning Suite for KSSR Year 1-2 Language Arts",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
 }
