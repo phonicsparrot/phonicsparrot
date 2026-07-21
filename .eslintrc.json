@@ -1,0 +1,32 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "worker": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-undef": "warn",
+    "no-duplicate-imports": "error",
+    "no-console": "off",
+    "no-debugger": "warn",
+    "prefer-const": "warn",
+    "no-var": "warn"
+  },
+  "globals": {
+    "PhonicsSTT": "readonly",
+    "PhonicsSTT_UI": "readonly",
+    "PhonicsLayout": "readonly",
+    "censor": "readonly",
+    "levenshtein": "readonly",
+    "getBestVoice": "readonly",
+    "requestMicPermission": "readonly",
+    "checkMicPermission": "readonly",
+    "getPhonemeColor": "readonly"
+  }
+}

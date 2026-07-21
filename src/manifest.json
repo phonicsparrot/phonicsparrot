@@ -1,0 +1,16 @@
+{
+  "name": "Phonics Parrot",
+  "short_name": "PhonicsParrot",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#2ec4b6",
+  "background_color": "#0a0a1a",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

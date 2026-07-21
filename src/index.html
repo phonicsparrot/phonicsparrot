@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phonics Parrot | Digital Suite</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2ec4b6">
+  <link rel="stylesheet" href="assets/css/shared.css">
+  <style>
+    /* 16:9 Zero-Scroll Homepage — fills 1280×720 exactly */
+    #scale-root {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      padding: 2rem 2rem 1rem;
+      flex-shrink: 0;
+    }
+
+    .hero {
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #ff7b00;
+      letter-spacing: -0.5px;
+      text-shadow:
+        /* Inner White Outline (2px) */
+        -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff,
+        -2px 0px 0 #fff, 2px 0px 0 #fff, 0px -2px 0 #fff, 0px 2px 0 #fff,
+        /* Outer Text-Color Outline (4px) */
+        -4px -4px 0 #1e293b, 4px -4px 0 #1e293b, -4px 4px 0 #1e293b, 4px 4px 0 #1e293b,
+        -4px 0px 0 #1e293b, 4px 0px 0 #1e293b, 0px -4px 0 #1e293b, 0px 4px 0 #1e293b,
+        -4px -2px 0 #1e293b, 4px -2px 0 #1e293b, -4px 2px 0 #1e293b, 4px 2px 0 #1e293b,
+        -2px -4px 0 #1e293b, 2px -4px 0 #1e293b, -2px 4px 0 #1e293b, 2px 4px 0 #1e293b,
+        /* Bubbly Bottom Shadow */
+        0 8px 0 #1e293b;
+    }
+
+    .hero p {
+      color: #475569;
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-top: .4rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── Scattered parrots as bubbles ───────────────────── */
+    .edge-parrot {
+      position: fixed;
+      z-index: 3;
+      pointer-events: none;
+      font-size: 1.8rem;
+      opacity: 1.0;
+      animation: parrot-float 6s ease-in-out infinite;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: 3px solid #1e293b;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 5px 0 #1e293b;
+    }
+
+    .edge-parrot-inner {
+      display: inline-block;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+
+    @keyframes parrot-float {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) translateY(0);
+      }
+
+      33% {
+        transform: translate(-50%, -50%) translateY(-10px);
+      }
+
+      66% {
+        transform: translate(-50%, -50%) translateY(6px);
+      }
+    }
+
+    .curriculum-tag {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      margin-top: 0.4rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .curriculum-tag span {
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: .4rem 1.1rem;
+      border-radius: 2rem;
+      background: #fff;
+      border: 3px solid #1e293b;
+      color: #1e293b;
+      box-shadow: 0 5px 0 #1e293b;
+    }
+
+    .curriculum-tag .ct-phoneme {
+      background: #eef2ff;
+      border-color: #1e293b;
+      color: #1e293b;
+      font-family: monospace;
+      font-size: .8rem;
+    }
+
+    .curriculum-tag .sep {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      opacity: .4;
+      padding: 0;
+    }
+
+    /* Cards grid — fills remaining vertical space */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 1.5rem;
+      flex: 1;
+      width: 100%;
+      max-width: 56rem;
+      min-height: 0;
+    }
+
+    .card {
+      /* Card style defined in shared.css, overridden below for coloring */
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .4rem;
+      position: relative;
+      overflow: hidden;
+      padding: 1.5rem 1.8rem;
+    }
+
+    .c-builder {
+      border-bottom: 8px solid #e94560 !important;
+    }
+
+    .c-speak {
+      border-bottom: 8px solid #4361ee !important;
+    }
+
+    .c-reader {
+      border-bottom: 8px solid #2ec4b6 !important;
+    }
+
+    .c-pingpong {
+      border-bottom: 8px solid #ff7b00 !important;
+    }
+
+    .card h2 {
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.3px;
+    }
+
+    .card p {
+      font-size: 1.05rem;
+      color: #1e293b;
+      line-height: 1.4;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .card-icon {
+      width: 3.2rem;
+      height: 3.2rem;
+      margin-bottom: .2rem;
+      flex-shrink: 0;
+      transition: transform .25s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+    }
+
+    .card-icon img,
+    .card-icon svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .card:hover .card-icon {
+      transform: scale(1.18) translateY(-4px) rotate(4deg);
+    }
+
+    .bottom-links {
+      flex-shrink: 0;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      align-items: center;
+      padding: .8rem 0;
+      margin-top: 0.4rem;
+    }
+
+    .bottom-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: .75rem 1.8rem;
+      border-radius: 2rem;
+      font-size: .95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all .2s;
+      border: 3px solid #1e293b;
+      box-shadow: 0 5px 0 #1e293b;
+    }
+
+    .bottom-links a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #1e293b;
+    }
+
+    .bottom-links a:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #1e293b;
+    }
+
+    .footer {
+      flex-shrink: 0;
+      opacity: .4;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-align: center;
+      padding: .3rem 0;
+      color: #475569;
+    }
+
+    /* Classroom mode: make footer readable at 30' */
+    body.classroom-mode .footer {
+      opacity: .7;
+      font-size: 1.1rem;
+    }
+
+    /* Bottom inline sound button on homepage */
+    .bottom-sound-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: auto;
+      padding: .75rem 1.2rem;
+      border-radius: 2rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #ffd166;
+      border: 3px solid #1e293b;
+      box-shadow: 0 5px 0 #1e293b;
+      font-family: inherit;
+      transition: all .2s;
+      outline: none;
+    }
+
+    .bottom-sound-btn:hover {
+      background: #ffb703;
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #1e293b;
+    }
+
+    .bottom-sound-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #1e293b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- App Loading Screen Overlay -->
+  <div id="app-loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo-wrapper">
+        <!-- SVG will be injected here dynamically -->
+      </div>
+      <div class="loading-progress-container">
+        <div class="loading-progress-bar"></div>
+      </div>
+      <div class="loading-status-text">Loading Phonics Parrot...</div>
+    </div>
+  </div>
+
+  <canvas id="bg-shader-canvas" class="bg-shader"></canvas>
+  <div class="bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="clouds">
+    <div class="cloud cloud-md" style="top: 10%; animation-duration: 25s; animation-delay: -5s;"></div>
+    <div class="cloud cloud-sm" style="top: 25%; animation-duration: 18s; animation-delay: -10s;"></div>
+    <div class="cloud cloud-md" style="top: 55%; animation-duration: 35s; animation-delay: -2s;"></div>
+    <div class="cloud cloud-sm" style="top: 80%; animation-duration: 22s; animation-delay: -15s;"></div>
+  </div>
+  <div class="motes" id="motes"></div>
+
+  <div id="scale-root">
+
+    <header class="hero">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem;">
+        <img src="assets/img/poster.svg"
+          style="height: 72px; width: auto; filter: drop-shadow(0 5px 0 #1e293b) drop-shadow(0 8px 20px rgba(30,41,59,0.18));"
+          alt="Logo">
+        <h1 style="display: inline-block; margin: 0;">Phonics Parrot</h1>
+      </div>
+      <p>Digital Learning Suite</p>
+    </header>
+
+    <div class="curriculum-tag" aria-label="Curriculum alignment">
+      <span>KSSR Year 1–2</span><span class="sep">·</span>
+      <span>Language Arts</span><span class="sep">·</span>
+      <span id="phonemeChips"
+        style="display:inline-flex;gap:.5rem;align-items:center;opacity:0;transition:opacity .4s;"></span>
+      <span class="sep">·</span>
+      <span>🎤 Voice-Interactive</span>
+    </div>
+
+    <main class="grid">
+      <a href="activities/builder.html" class="card c-builder" aria-label="Flashcard Builder">
+        <div class="card-icon">
+          <img src="assets/img/flashcard.svg" alt="Flashcard Builder">
+        </div>
+        <div>
+          <h2>Flashcard Builder</h2>
+          <p>Interactive digital cards for phonics practice.</p>
+        </div>
+      </a>
+      <a href="activities/speak.html" class="card c-speak" aria-label="Poem Builder">
+        <div class="card-icon">
+          <img src="assets/img/poem_builder.svg" alt="Poem Builder">
+        </div>
+        <div>
+          <h2 id="speakCardTitle">Poem Builder</h2>
+          <p id="speakCardDesc">Write and read your own free time poem.</p>
+        </div>
+      </a>
+      <a href="activities/reader.html" class="card c-reader" aria-label="Line Reader">
+        <div class="card-icon">
+          <img src="assets/img/line_reader.svg" alt="Line Reader">
+        </div>
+        <div>
+          <h2>Line Reader</h2>
+          <p>Guided phonics reading with real-time feedback.</p>
+        </div>
+      </a>
+      <a href="activities/pingpong.html" class="card c-pingpong" aria-label="Phonics Pong">
+        <div class="card-icon">
+          <img src="assets/img/pingpong.svg" alt="Phonics Pong">
+        </div>
+        <div>
+          <h2>Phonics Pong</h2>
+          <p>Fast-paced recognition game to sharpen skills.</p>
+        </div>
+      </a>
+    </main>
+
+    <div class="bottom-links">
+      <button id="global-sound-btn" class="bottom-sound-btn" aria-label="Toggle Sound"></button>
+      <a href="activities/teacher.html" style="background:#ff7b00;color:#fff;">🏫 Teacher Dashboard</a>
+      <a href="teacher_guide.html" style="background:#2ec4b6;color:#fff;">📖 Help</a>
+    </div>
+
+    <footer class="footer">PHONICS PARROT &copy; 2026 | IPGKSAH INNOVATION PROJECT &nbsp;|&nbsp; AJWAD &middot; AISYAH
+      &middot; AIN &middot; AMNA</footer>
+
+  </div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/audio.js"></script>
+  <script src="assets/js/stt.js"></script>
+  <script src="assets/js/layout.js"></script>
+  <script>
+    (function () {
+      var isDebug = window.location.search.indexOf("debug") !== -1;
+      var isFirstLaunch = !sessionStorage.getItem("pp_launched");
+      var duration = isFirstLaunch ? 2500 : 1200;
+      var overlay = document.getElementById("app-loading-screen");
+      var progressBar = overlay ? overlay.querySelector(".loading-progress-bar") : null;
+      var statusText = overlay ? overlay.querySelector(".loading-status-text") : null;
+
+      if (statusText) {
+        if (isDebug) {
+          statusText.textContent = "Loading Screen Isolate [Debug Mode]";
+        } else {
+          statusText.textContent = isFirstLaunch ? "Welcome to Phonics Parrot..." : "Loading Dashboard...";
+        }
+      }
+
+      fetch("assets/img/poster.svg")
+        .then(function (res) { return res.text(); })
+        .then(function (svgText) {
+          var wrapper = overlay ? overlay.querySelector(".loading-logo-wrapper") : null;
+          if (!wrapper) return;
+          wrapper.innerHTML = svgText;
+          var svgEl = wrapper.querySelector("svg");
+          if (svgEl) {
+            svgEl.id = "loading-svg-element";
+            requestAnimationFrame(function () {
+              svgEl.classList.add("animate");
+            });
+          }
+        })
+        .catch(function (err) {
+          console.error("Failed to load poster SVG", err);
+        });
+
+      var startTime = performance.now();
+      function tick(now) {
+        var elapsed = now - startTime;
+        var progress = Math.min((elapsed / duration) * 100, 100);
+        if (progressBar) {
+          progressBar.style.width = progress + "%";
+        }
+        if (elapsed < duration) {
+          requestAnimationFrame(tick);
+        } else {
+          if (isDebug) {
+            return; // Isolate and freeze loading screen in debug mode
+          }
+          if (isFirstLaunch) {
+            sessionStorage.setItem("pp_launched", "1");
+            window.location.replace("activities/teacher.html");
+          } else {
+            if (overlay) {
+              overlay.style.opacity = "0";
+              setTimeout(function () {
+                overlay.style.display = "none";
+              }, 500);
+            }
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    })();
+
+    new PhonicsLayout(1280, 720);
+
+    // Dynamic Poem/Song Builder Card Details
+    (function updateSpeakCard() {
+      var lessonTitle = localStorage.getItem("PP_LESSON_TITLE") || "My Free Time";
+      var contentType = localStorage.getItem("PP_CONTENT_TYPE") || "poem";
+      var typeCap = contentType.charAt(0).toUpperCase() + contentType.slice(1);
+
+      var elTitle = document.getElementById("speakCardTitle");
+      var elDesc = document.getElementById("speakCardDesc");
+      if (elTitle) elTitle.textContent = typeCap + " Builder";
+      if (elDesc) elDesc.textContent = "Write and read your own " + lessonTitle.toLowerCase() + " " + contentType + ".";
+    })();
+
+    document.querySelectorAll(".card").forEach(function (card) {
+      card.onmousemove = function (e) {
+        var r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+        card.style.setProperty("--my", (e.clientY - r.top) + "px");
+      };
+    });
+
+    // Dynamic phoneme chips (with defensive fallback)
+    (function () {
+      var c = document.getElementById("phonemeChips");
+      if (!c) return;
+      var phonemes = ["/aɪ/", "/eɪ/", "/iː/", "/ɔɪ/"];
+      try {
+        if (typeof loadLessonData === "function") {
+          var result = loadLessonData();
+          if (result.ok && result.phonemes && result.phonemes.length) {
+            phonemes = result.phonemes;
+          }
+        }
+      } catch (e) { /* use defaults */ }
+      var colors = { "/eɪ/": "#e94560", "/aɪ/": "#4361ee", "/iː/": "#2ec4b6", "/ɔɪ/": "#ff7b00", "/əʊ/": "#9b5de5", "/aʊ/": "#f15bb5", "/ɪə/": "#00f5d4", "/eə/": "#fee440", "/ʊə/": "#00bbf9" };
+      c.innerHTML = "";
+      for (var i = 0; i < phonemes.length; i++) {
+        var ph = phonemes[i], clr = colors[ph] || "#4361ee";
+        var s = document.createElement("span"); s.className = "ct-phoneme";
+        s.style.cssText = "background:" + clr + ";color:#fff;padding:.4rem 1.1rem;border-radius:2rem;font-size:.85rem;font-weight:700;border:3px solid #1e293b;box-shadow:0 5px 0 #1e293b;letter-spacing:.06em;text-transform:uppercase;";
+        s.textContent = ph; c.appendChild(s);
+      }
+      setTimeout(function () { c.style.opacity = "1"; }, 50);
+    })();
+
+    // v9: Scatter educational and parrot emojis across the background viewport margins
+    (function scatterParrots() {
+      var count = 75; // Increased count to cover corners and margins nicely
+      var emojis = ["🦜", "🏓", "✏️", "📖", "🔤", "🏫", "✨", "⭐", "📝", "🎙️", "🎧", "🎨", "🌟"];
+      var frag = document.createDocumentFragment();
+      var placed = [];
+      var minDistance = 7.5; // Slightly reduced distance to allow more naturally packed spacing in corners
+
+      var forbiddenZones = [
+        // Hero header (top center)
+        { leftMin: 20, leftMax: 80, topMin: 0, topMax: 16 },
+        // Curriculum tags
+        { leftMin: 15, leftMax: 85, topMin: 16, topMax: 24 },
+        // The 4 panels grid (center area)
+        { leftMin: 10, leftMax: 90, topMin: 24, topMax: 80 },
+        // Bottom buttons
+        { leftMin: 25, leftMax: 75, topMin: 80, topMax: 90 },
+        // Copyright footer
+        { leftMin: 15, leftMax: 85, topMin: 90, topMax: 100 }
+      ];
+
+      for (var i = 0; i < count; i++) {
+        var left, top, valid = false;
+        // Try up to 250 times to find a position with minimum spacing
+        for (var attempts = 0; attempts < 250; attempts++) {
+          left = Math.random() * 104 - 2; // Position anywhere horizontally (-2% to 102%)
+          top = Math.random() * 104 - 2;  // Position anywhere vertically (-2% to 102%)
+
+          // 1. Check if the coordinate falls inside any forbidden zone
+          var insideForbidden = false;
+          for (var f = 0; f < forbiddenZones.length; f++) {
+            var zone = forbiddenZones[f];
+            if (left >= zone.leftMin && left <= zone.leftMax && top >= zone.topMin && top <= zone.topMax) {
+              insideForbidden = true;
+              break;
+            }
+          }
+          if (insideForbidden) {
+            continue; // Reject and try again
+          }
+
+          // 2. Check distance to all previously placed emojis
+          var ok = true;
+          for (var j = 0; j < placed.length; j++) {
+            var dx = left - placed[j].left;
+            var dy = top - placed[j].top;
+            if (Math.sqrt(dx * dx + dy * dy) < minDistance) {
+              ok = false;
+              break;
+            }
+          }
+          if (ok) {
+            valid = true;
+            break;
+          }
+        }
+
+        // Only place if we found a valid position
+        if (valid) {
+          placed.push({ left: left, top: top });
+
+          var p = document.createElement("span");
+          p.className = "edge-parrot";
+          p.style.left = left + "%";
+          p.style.top = top + "%";
+
+          p.style.animationDelay = "-" + (Math.random() * 6).toFixed(1) + "s";
+          p.style.animationDuration = (5 + Math.random() * 4).toFixed(1) + "s";
+          p.style.fontSize = (1.5 + Math.random() * 1.2).toFixed(1) + "rem"; // Slightly smaller max size for density
+
+          // Inner element containing the emoji content, rotated independently
+          var innerEl = document.createElement("span");
+          innerEl.className = "edge-parrot-inner";
+          innerEl.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          var baseRot = Math.floor(Math.random() * 360);
+          innerEl.style.transform = "rotate(" + baseRot + "deg)";
+          p.appendChild(innerEl);
+
+          frag.appendChild(p);
+        }
+      }
+      document.body.appendChild(frag);
+    })();
+  </script>
+</body>
+
+</html>

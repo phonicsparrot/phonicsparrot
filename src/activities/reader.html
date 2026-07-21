@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phonics Parrot — Line Reader</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#2ec4b6">
+  <link rel="stylesheet" href="../assets/css/shared.css">
+  <style>
+    /* ── SHELL fills viewport ───────────────────────────────── */
+    #scale-root > .shell {
+      position: absolute;
+      top: 1rem; bottom: 1.8rem; left: 1.5rem; right: 1.5rem;
+      border-bottom: 8px solid #2ec4b6 !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Decorative elements */
+    .decor-wing {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: clamp(140px, 20vw, 240px);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.9;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+    .decor-left { left: 0.5rem; }
+    .decor-right { right: 0.5rem; }
+    .decor-img { width: 100%; height: 100%; object-fit: fill; }
+
+    /* ── APP: flex column ────────────── */
+    .app {
+      position: absolute; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 0.8rem 2.5rem 0.6rem;
+    }
+
+    /* ── HEAD ─────────────────── */
+    .head {
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .head h1 {
+      font-size: 1.6rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: .4rem;
+      color: #1e293b;
+    }
+    .head h1 .p-icon {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 4px 0 rgba(30,41,59,0.15));
+      transition: filter .3s;
+    }
+    .head h1 .p-icon.talking {
+      animation: talk-bob .4s ease infinite alternate;
+    }
+    .session-acc {
+      font-size: .85rem; font-weight: 700; padding: .3rem .9rem; border-radius: 1rem;
+      background: #fff; border: 2.5px solid #1e293b; opacity: .95; margin-left: .4rem;
+      color: #1e293b; box-shadow: 0 3px 0 #1e293b; transition: all .3s;
+    }
+    .session-acc.lit {
+      opacity: 1; background: #e6fffa; color: #14b8a6; border-color: #1e293b;
+    }
+
+    .line-info {
+      display: flex; align-items: center; gap: .8rem;
+      margin-top: .25rem; justify-content: center;
+    }
+    .line-num { font-size: 1rem; font-weight: 800; color: #ff7b00; }
+    .sound-tags { display: flex; gap: .4rem; }
+    .stag {
+      padding: .3rem .9rem; border-radius: 1.2rem;
+      font-size: .8rem; font-weight: 700; border: 2.5px solid #1e293b;
+      background: #fff; color: #1e293b; box-shadow: 0 3px 0 #1e293b;
+    }
+
+    /* ── CENTRE (flex:1) ────────────── */
+    .centre {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      align-items: center;
+      justify-content: space-around; /* distribute vertical space evenly */
+      gap: 0;
+      width: 100%; max-width: 1400px;
+    }
+
+    .sec-label {
+      font-size: .85rem; text-transform: uppercase; letter-spacing: .14em;
+      font-weight: 800; opacity: .95; color: #475569;
+      flex-shrink: 0;
+      padding: 0.15rem 0;
+    }
+
+    /* Orig line: flex:1 */
+    .orig-line {
+      flex: 1 0 auto;
+      font-size: clamp(3.0rem, 4.5vw, 4.5rem);
+      font-weight: 800; line-height: 1.4; /* headroom for floating correct badges */
+      display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+      gap: 0 .35em; padding: 0.4rem clamp(150px, 20vw, 250px);
+      color: #1e293b;
+    }
+    .orig-line .w {
+      position: relative;
+      display: inline-block;
+      transition: all 0.25s ease;
+    }
+    .orig-line .w.correct {
+      color: #14b8a6 !important;
+      transform: scale(1.06);
+    }
+    .orig-line .w.missed {
+      color: rgba(148, 163, 184, 0.45) !important;
+      text-decoration-color: rgba(203, 213, 225, 0.45) !important;
+    }
+    .orig-line .w.missed[data-heard] {
+      color: transparent !important;
+      text-decoration-color: transparent !important;
+    }
+    /* Custom bubbly teal checkmark badge */
+    .orig-line .w.tw.correct::after {
+      content: "✓";
+      position: absolute;
+      bottom: calc(100% - 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #fff;
+      background: #2ec4b6;
+      border: 2px solid #1e293b;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 0 #1e293b;
+      line-height: 1;
+    }
+    /* Custom bubbly red cross badge (shown only when no heard word bubble exists) */
+    .orig-line .w.tw.missed:not([data-heard])::after {
+      content: "✗";
+      position: absolute;
+      bottom: calc(100% - 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #fff;
+      background: #e94560;
+      border: 2px solid #1e293b;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 0 #1e293b;
+      line-height: 1;
+    }
+    /* Bubbly red bubble overlaying the incorrect word directly at 100% opacity */
+    .orig-line .w.missed[data-heard]::before {
+      content: "✗ " attr(data-heard);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.55em;
+      font-weight: 800;
+      color: #e94560;
+      background: #ffebee;
+      border: 3.5px solid #1e293b;
+      padding: 0.15em 0.45em;
+      border-radius: 12px;
+      white-space: nowrap;
+      box-shadow: 0 4px 0 #1e293b;
+      pointer-events: none;
+      line-height: 1;
+      z-index: 10;
+    }
+    .orig-line .tw {
+      font-weight: 800; text-decoration: underline;
+      text-decoration-thickness: 4px; text-underline-offset: 8px;
+      text-decoration-color: #ff7b00;
+    }
+
+    /* ── Mic ───────────────────────────────────────────────── */
+    .mic {
+      width: clamp(75px, 9vw, 95px); height: clamp(75px, 9vw, 95px);
+      border-radius: 50%; flex-shrink: 0;
+      border: 4px solid #1e293b;
+      background: #2ec4b6; color: #fffffe;
+      cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center;
+      margin: .25rem 0; position: relative;
+      box-shadow: 0 7px 0 #1e293b;
+    }
+    .mic:hover { transform: translateY(-2px); box-shadow: 0 9px 0 #1e293b; }
+    .mic:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e293b; }
+    .mic-emoji { font-size: 2.3rem; transition: opacity .2s; }
+    .mic.on { border-color: #1e293b; background: #e6fffa; animation: mic-glow 1.6s ease infinite; box-shadow: 0 4px 0 #1e293b; }
+    .mic.on .mic-emoji { opacity: 0; position: absolute; }
+    .mic.on .waves { display: flex; }
+    .waves { display: none; gap: 3px; align-items: center; height: 30px; }
+    .waves span { width: 3.5px; border-radius: 2px; background: #2ec4b6; animation: wave-bar .9s ease-in-out infinite; }
+
+    @keyframes mic-glow {
+      0%,100%{box-shadow:0 0 0 0 rgba(46,196,182,.35)}50%{box-shadow:0 0 0 15px rgba(46,196,182,0)}
+    }
+
+    .divider {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .decor-wing { display: none; }
+    }
+
+    /* ── Heard area: flex:1 ─────────────── */
+    .heard-area {
+      flex: 0 0 auto;
+      display: flex; flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .heard-line {
+      flex: 1 0 auto;
+      font-size: clamp(2.0rem, 3.2vw, 3.0rem);
+      font-weight: 800; line-height: 1.2;
+      display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+      gap: 0 .3em; padding: 0.4rem clamp(150px, 20vw, 250px);
+    }
+    #heardLabel, #heardLine {
+      display: none !important;
+    }
+    .heard-line .hw-match   { color: #14b8a6; }
+    .heard-line .hw-miss    { color: #e94560; }
+    .heard-line .hw-interim { color: #475569; font-style: italic; }
+
+    /* Score area */
+    .score {
+      display: flex; flex-direction: column; align-items: center;
+      gap: .3rem; flex-shrink: 0;
+      opacity: 0; transition: opacity .3s;
+      padding-bottom: .2rem;
+    }
+    .score.show { opacity: 1; }
+
+    .score-main {
+      font-size: 1.2rem; font-weight: 800;
+      padding: .5rem 1.6rem; border-radius: 1rem;
+      border: 3px solid #1e293b;
+      box-shadow: 0 4px 0 #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    .score-main.perfect { background: #e6fffa; color: #14b8a6; }
+    .score-main.close   { background: #fffbeb; color: #d97706; }
+    .score-main.poor    { background: #ffebee; color: #e94560; }
+
+    .score-targets {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: .5rem; font-size: .85rem; font-weight: 700;
+    }
+    .target-res {
+      display: flex; align-items: center; gap: .35rem;
+      padding: .3rem .8rem; border-radius: .6rem; border: 2.5px solid #1e293b;
+      background: #fff; color: #1e293b; box-shadow: 0 3px 0 #1e293b;
+    }
+    .target-res.miss { opacity: 0.55; }
+    .target-cat { padding: .15rem .5rem; border-radius: .4rem; font-size: .75rem; font-weight: 800; border: 1.5px solid #1e293b; color: #fff; }
+
+    .pv {
+      display: flex; align-items: center; justify-content: center;
+      gap: .45rem; font-size: 1.1rem; font-weight: 700;
+      color: #14b8a6; opacity: 0; transition: opacity .3s;
+      height: 1.5rem; flex-shrink: 0;
+    }
+    .pv.on { opacity: 1; }
+    .pv .pv-icon { animation: talk-bob .35s ease infinite alternate; }
+    .pv-bars { display: flex; gap: 3px; align-items: center; height: 14px; }
+    .pv-bars span { width: 3px; border-radius: 1.5px; background: #2ec4b6; animation: pv-bar .6s ease-in-out infinite; }
+    @keyframes pv-bar { 0%,100%{height:4px;opacity:.4}50%{height:14px;opacity:1} }
+
+    /* ── NAV ──────────────────── */
+    .nav {
+      display: flex; align-items: center; gap: 1.2rem;
+      flex-shrink: 0;
+      padding-top: .2rem;
+    }
+    .btn {
+      background: #fff;
+      color: #1e293b;
+      font-size: 1rem;
+      padding: 0.65rem 1.5rem;
+    }
+    .ctr {
+      font-size: 1.05rem; opacity: .6; font-weight: 700;
+      min-width: 5rem; text-align: center; color: #1e293b;
+    }
+
+    /* ── Particles & Flash ──────────────────────────────────── */
+    .particle {
+      position: absolute; font-size: 1.6rem; pointer-events: none; z-index: 60;
+      animation: burst 1.3s ease-out forwards;
+    }
+    @keyframes burst {
+      0%{opacity:1;transform:translate(0,0) scale(0) rotate(0)}
+      40%{opacity:1;transform:translate(var(--x),var(--y1)) scale(1.3) rotate(var(--r))}
+      100%{opacity:0;transform:translate(var(--x),var(--y2)) scale(.4) rotate(var(--r))}
+    }
+    .flash {
+      position: absolute; inset: 0; z-index: 55;
+      pointer-events: none; opacity: 0; transition: opacity .15s;
+    }
+    .flash.go { opacity: 1; transition: opacity 0s; }
+  </style>
+</head>
+<body>
+
+<div id="rotate-msg">
+  <div class="rotate-icon">📱</div>
+  <div class="rotate-title">Rotate Your Device</div>
+  <div class="rotate-sub">Phonics Parrot works best in landscape mode.</div>
+</div>
+
+<canvas id="bg-shader-canvas" class="bg-shader"></canvas>
+<div class="bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<div class="motes" id="motes"></div>
+
+<div id="scale-root">
+  <button id="exitBtn" class="exit-btn" title="Exit / Dismiss">✕</button>
+  <div class="shell">
+    <!-- Decorative swinging plants on sides -->
+    <div class="decor-wing decor-left">
+      <img src="../assets/img/plant_decor.svg" alt="Decor" class="decor-img">
+    </div>
+    <div class="decor-wing decor-right">
+      <img src="../assets/img/plant_decor.svg" alt="Decor" class="decor-img" style="transform: scaleX(-1);">
+    </div>
+
+    <div id="confetti" style="position:absolute;inset:0;pointer-events:none;z-index:100;"></div>
+    <div class="flash" id="flash" style="background:radial-gradient(circle,rgba(46,196,182,.08),transparent 70%);"></div>
+
+    <div class="setup" id="setup">
+      <img src="../assets/img/poster.svg" class="mascot-img-setup" style="height:120px;width:auto;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 4px 0 #1e293b);" alt="Logo">
+      <h1>Phonics Parrot</h1>
+      <p class="sub">Read each line aloud — the parrot scores your pronunciation in real time.</p>
+      <button class="enable-btn" id="enableBtn">🎤&ensp;Start Listening</button>
+      <p class="err" id="setupErr">Microphone was blocked. Check browser settings.</p>
+    </div>
+
+    <div class="app" id="app">
+      <div class="head" id="mainHead">
+        <h1>
+          <img src="../assets/img/poster.svg" class="mascot-head-img" id="pIcon" style="height:48px;width:auto;object-fit:contain;margin-right:8px;vertical-align:middle;filter:drop-shadow(0 2px 0 rgba(30,41,59,0.15));" alt="Logo">
+          Phonics Parrot
+          <span class="dot" id="dot"></span>
+          <span class="session-acc" id="sessionAcc">Avg: —</span>
+        </h1>
+        <div class="line-info">
+          <div class="line-num" id="lineNum">Line 1</div>
+          <div class="sound-tags" id="soundTags"></div>
+        </div>
+      </div>
+
+      <div class="centre">
+        <div class="sec-label">Read this line</div>
+        <div class="orig-line" id="origLine"></div>
+
+        <button class="mic" id="mic" aria-label="Tap to record. Read the line aloud.">
+          <span class="mic-emoji" id="micEmoji">🎤</span>
+          <div class="waves" id="waves"><span></span><span></span><span></span><span></span><span></span></div>
+        </button>
+
+        <div class="divider"></div>
+
+        <div class="heard-area">
+          <div class="sec-label" id="heardLabel" style="opacity:0">The parrot heard</div>
+          <div class="heard-line" id="heardLine"></div>
+          <div class="score" id="scoreArea">
+            <div class="score-main" id="scoreMain"></div>
+            <div class="score-targets" id="scoreTargets"></div>
+          </div>
+          <div class="pv" id="pv">
+            <span class="pv-icon">🦜</span>
+            <div class="pv-bars"><span></span><span></span><span></span><span></span></div>
+            <span>speaking…</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="prevBtn">← Prev</button>
+        <span class="ctr" id="ctr">1</span>
+        <button class="btn" id="nextBtn">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="keys">
+    <kbd>Space</kbd> listen &nbsp;
+    <kbd>←</kbd><kbd>→</kbd> navigate &nbsp;
+    <kbd>R</kbd> repeat
+  </div>
+</div>
+
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/audio.js"></script>
+<script src="../assets/js/stt.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script>
+"use strict";
+
+new PhonicsLayout(1280, 720);
+
+// Load poem
+var POEM = [];
+try {
+  var raw = localStorage.getItem("CUSTOM_POEM");
+  if (raw) POEM = JSON.parse(raw);
+} catch(e) {}
+
+if (POEM.length === 0) {
+  // Show error when DOM is ready (avoids window.onload conflict)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showEmptyLessonError);
+  } else {
+    showEmptyLessonError();
+  }
+} else {
+
+var lineIndex = 0;
+var speaking = false;
+
+var elOrigLine    = document.getElementById("origLine");
+var elHeardLine   = document.getElementById("heardLine");
+var elHeardLabel  = document.getElementById("heardLabel");
+var elScoreArea   = document.getElementById("scoreArea");
+var elScoreMain   = document.getElementById("scoreMain");
+var elScoreTargets = document.getElementById("scoreTargets");
+var elMic         = document.getElementById("mic");
+var elDot         = document.getElementById("dot");
+var elFlash       = document.getElementById("flash");
+var elPv          = document.getElementById("pv");
+var elPIcon       = document.getElementById("pIcon");
+var elSessionAcc  = document.getElementById("sessionAcc");
+
+// Session accuracy tracking
+var sessionScores = [];
+function updateSessionAcc() {
+  if (sessionScores.length === 0) return;
+  var sum = 0;
+  for (var i = 0; i < sessionScores.length; i++) sum += sessionScores[i];
+  var avg = Math.round(sum / sessionScores.length);
+  elSessionAcc.textContent = "Avg: " + avg + "%";
+  elSessionAcc.classList.add("lit");
+}
+
+// Mic setup
+document.getElementById("enableBtn").onclick = async function() {
+  await requestMicPermission(
+    function() { 
+      elDot.classList.add("ok"); 
+      document.getElementById("setup").classList.add("gone"); 
+      PhonicsAudio.playStart();
+    },
+    function() { document.getElementById("setupErr").classList.add("show"); }
+  );
+};
+
+(async function() {
+  if (await checkMicPermission()) {
+    elDot.classList.add("ok");
+    document.getElementById("setup").classList.add("gone");
+    PhonicsAudio.playStart();
+  }
+})();
+
+document.getElementById("exitBtn").onclick = function() {
+  var setup = document.getElementById("setup");
+  if (!setup.classList.contains("gone")) {
+    setup.classList.add("gone");
+    document.getElementById("setupErr").textContent = "Mic Disabled — Preview Mode";
+    document.getElementById("setupErr").classList.add("show");
+  } else {
+    window.location.href = "../index.html";
+  }
+};
+
+function showLine() {
+  var line = POEM[lineIndex];
+  var words = line.text.split(/\s+/);
+
+  var html = "";
+  for (var wi = 0; wi < words.length; wi++) {
+    var w = words[wi];
+    var clean = w.toLowerCase().replace(/[^\w]/g, "");
+    var ipa = line.targets[clean];
+    if (ipa) {
+      var c = getPhonemeColor(ipa);
+      html += "<span class=\"w tw\" data-word=\"" + clean + "\" style=\"color:" + c + ";text-decoration-color:" + c + ";\">" + w + "</span> ";
+    } else {
+      html += "<span class=\"w\" data-word=\"" + clean + "\">" + w + "</span> ";
+    }
+  }
+  elOrigLine.innerHTML = html.trim();
+
+  // Sound tags
+  var ipasSeen = [];
+  var targets = line.targets;
+  var keys = Object.keys(targets);
+  var tagsHtml = "";
+  for (var ki = 0; ki < keys.length; ki++) {
+    var ipa2 = targets[keys[ki]];
+    if (ipasSeen.indexOf(ipa2) === -1) {
+      ipasSeen.push(ipa2);
+      var c2 = getPhonemeColor(ipa2);
+      var bg2 = c2.replace("hsl", "hsla").replace(")", ", 0.15)");
+      tagsHtml += "<span class=\"stag\" style=\"background:" + bg2 + ";border-color:" + c2 + ";color:" + c2 + ";\">" + ipa2 + "</span>";
+    }
+  }
+  document.getElementById("soundTags").innerHTML = tagsHtml;
+  document.getElementById("lineNum").textContent = "Line " + (lineIndex + 1) + " / " + POEM.length;
+  document.getElementById("ctr").textContent = (lineIndex + 1) + " / " + POEM.length;
+
+  elHeardLine.innerHTML = "";
+  elHeardLabel.style.opacity = "0";
+  elScoreArea.classList.remove("show");
+}
+
+function nextLine() { lineIndex = (lineIndex + 1) % POEM.length; showLine(); }
+function prevLine() { lineIndex = (lineIndex - 1 + POEM.length) % POEM.length; showLine(); }
+document.getElementById("nextBtn").onclick = nextLine;
+document.getElementById("prevBtn").onclick = prevLine;
+
+// Known homophone corrections for STT
+var knownFixes = { write:"ride", right:"ride", weak:"week", sea:"see" };
+
+function alignSentences(origWords, heardWords) {
+  var dp = [];
+  for (var i = 0; i <= origWords.length; i++) {
+    dp[i] = [];
+    for (var j = 0; j <= heardWords.length; j++) {
+      if (i === 0) dp[i][j] = j;
+      else if (j === 0) dp[i][j] = i;
+      else {
+        var cleanOrig = origWords[i-1].toLowerCase().replace(/[^\w]/g, "");
+        var cleanHeard = heardWords[j-1].toLowerCase().replace(/[^\w]/g, "");
+        var cost = (cleanOrig === cleanHeard || (knownFixes[cleanOrig] && cleanHeard === knownFixes[cleanOrig])) ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i-1][j] + 1,
+          dp[i][j-1] + 1,
+          dp[i-1][j-1] + cost
+        );
+      }
+    }
+  }
+
+  var alignment = [];
+  var oi = origWords.length;
+  var hj = heardWords.length;
+
+  while (oi > 0 || hj > 0) {
+    if (oi > 0 && hj > 0) {
+      var cleanOrig2 = origWords[oi-1].toLowerCase().replace(/[^\w]/g, "");
+      var cleanHeard2 = heardWords[hj-1].toLowerCase().replace(/[^\w]/g, "");
+      var cost2 = (cleanOrig2 === cleanHeard2 || (knownFixes[cleanOrig2] && cleanHeard2 === knownFixes[cleanOrig2])) ? 0 : 1;
+      if (dp[oi][hj] === dp[oi-1][hj-1] + cost2) {
+        alignment.unshift({ orig: origWords[oi-1], heard: heardWords[hj-1], origIdx: oi-1 });
+        oi--; hj--;
+        continue;
+      }
+    }
+    if (oi > 0 && (hj === 0 || dp[oi][hj] === dp[oi-1][hj] + 1)) {
+      alignment.unshift({ orig: origWords[oi-1], heard: null, origIdx: oi-1 });
+      oi--;
+    } else {
+      hj--;
+    }
+  }
+  return alignment;
+}
+
+function compareLines(heardText) {
+  var line = POEM[lineIndex];
+  var origWords = line.text.toLowerCase().replace(/[^\w\s]/g, "").trim().split(/\s+/).filter(Boolean);
+  var origSet = {};
+  for (var oi = 0; oi < origWords.length; oi++) origSet[origWords[oi]] = true;
+
+  var corrected = heardText.toLowerCase().replace(/[^\w\s]/g, "").trim().split(/\s+/).filter(Boolean).map(function(w) {
+    return knownFixes[w] || w;
+  });
+
+  var heardSet = {};
+  for (var hi = 0; hi < corrected.length; hi++) heardSet[corrected[hi]] = true;
+
+  // Build HTML for heard line
+  var heardWords = heardText.trim() ? heardText.trim().split(/\s+/).filter(Boolean) : [];
+  var heardHtml = "";
+  for (var hwi = 0; hwi < heardWords.length; hwi++) {
+    var hw = heardWords[hwi];
+    var cleanHw = hw.toLowerCase().replace(/[^\w]/g, "");
+    var isMatch = origSet[knownFixes[cleanHw] || cleanHw];
+    heardHtml += "<span class=\"" + (isMatch ? "hw-match" : "hw-miss") + "\">" + hw + "</span> ";
+  }
+
+  // Count matches
+  var matchCount = 0;
+  for (var oi2 = 0; oi2 < origWords.length; oi2++) {
+    if (heardSet[origWords[oi2]]) matchCount++;
+  }
+  var score = Math.round((matchCount / origWords.length) * 100);
+
+  // Per-target results
+  var targetResults = [];
+  var tKeys = Object.keys(line.targets);
+  for (var tki = 0; tki < tKeys.length; tki++) {
+    var tw = tKeys[tki];
+    targetResults.push({ word: tw, ipa: line.targets[tw], hit: !!heardSet[tw] });
+  }
+
+  return { html: heardHtml.trim(), score: score, targets: targetResults, pct: score / 100 };
+}
+
+function showResult(heardText) {
+  var line = POEM[lineIndex];
+  elHeardLabel.style.opacity = "0.4";
+  var r = compareLines(heardText);
+  sessionScores.push(r.score);
+  updateSessionAcc();
+
+  elHeardLine.innerHTML = r.html;
+  elScoreMain.textContent = r.score + "% Accuracy";
+  elScoreMain.className = "score-main " + (r.pct >= 0.8 ? "perfect" : r.pct >= 0.5 ? "close" : "poor");
+
+  var targetsHtml = "";
+  for (var ti = 0; ti < r.targets.length; ti++) {
+    var t = r.targets[ti];
+    var c = getPhonemeColor(t.ipa);
+    var bg = c.replace("hsl", "hsla").replace(")", ", 0.1)");
+    var icon = t.hit ? "✅" : "❌";
+    targetsHtml += "<div class=\"target-res " + (t.hit ? "hit" : "miss") + "\"";
+    if (t.hit) targetsHtml += " style=\"background:" + bg + ";border-color:" + c + ";color:" + c + ";\"";
+    targetsHtml += "><span>" + t.word + "</span><span class=\"target-cat\" style=\"border:1px solid " + c + ";color:" + c + ";\">" + t.ipa + "</span><span>" + icon + "</span></div>";
+  }
+  elScoreTargets.innerHTML = targetsHtml;
+  elScoreArea.classList.add("show");
+
+  // Highlight original line words dynamically
+  highlightWords(heardText, true);
+
+  // Log performance details
+  var primaryPhoneme = Object.values(line.targets)[0] || "Custom Line";
+  logPerformance({
+    activity: "reader",
+    target: line.text,
+    phoneme: primaryPhoneme,
+    spoken: heardText,
+    score: r.score,
+  });
+
+  if (r.pct >= 0.5) { 
+    PhonicsAudio.playSuccess();
+    celebrate(); 
+    doFlash(); 
+  }
+}
+
+function highlightWords(heardText, isFinal) {
+  var line = POEM[lineIndex];
+  var origWordsForAlign = line.text.trim() ? line.text.trim().split(/\s+/).filter(Boolean) : [];
+  var heardWordsForAlign = heardText.trim() ? heardText.trim().split(/\s+/).filter(Boolean) : [];
+  var alignment = alignSentences(origWordsForAlign, heardWordsForAlign);
+
+  var wordSpans = elOrigLine.querySelectorAll(".w");
+  // First clear any previous state
+  for (var k = 0; k < wordSpans.length; k++) {
+    wordSpans[k].classList.remove("correct", "missed");
+    wordSpans[k].removeAttribute("data-heard");
+  }
+
+  for (var a = 0; a < alignment.length; a++) {
+    var item = alignment[a];
+    if (item.origIdx === undefined || item.origIdx >= wordSpans.length) continue;
+    var span = wordSpans[item.origIdx];
+    
+    var cleanOrig = item.orig.toLowerCase().replace(/[^\w]/g, "");
+    var cleanHeard = item.heard ? item.heard.toLowerCase().replace(/[^\w]/g, "") : "";
+    var isCorrect = (cleanOrig === cleanHeard) || (knownFixes[cleanOrig] && cleanHeard === knownFixes[cleanOrig]);
+    
+    if (isCorrect) {
+      span.classList.add("correct");
+    } else {
+      if (item.heard && item.heard.trim().length > 0) {
+        span.classList.add("missed");
+        var dispHeard = item.heard.replace(/[^\w]/g, "");
+        if (dispHeard) {
+          span.setAttribute("data-heard", dispHeard);
+        }
+      } else if (isFinal) {
+        // Only mark as missed if finalizing (don't mark upcoming words in real-time)
+        span.classList.add("missed");
+      }
+    }
+  }
+}
+
+function doFlash() { elFlash.classList.add("go"); setTimeout(function(){ elFlash.classList.remove("go"); }, 150); }
+
+function celebrate() {
+  var emojis = ["✨","⭐","🎉","🦜","💚","💫"];
+  var box = document.getElementById("confetti");
+  for (var i = 0; i < 14; i++) {
+    var p = document.createElement("div"); p.className = "particle";
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = "50%"; p.style.top = "60%";
+    p.style.setProperty("--x", ((Math.random() - 0.5) * 300) + "px");
+    p.style.setProperty("--y1", (-70 - Math.random() * 100) + "px");
+    p.style.setProperty("--y2", (-150 - Math.random() * 150) + "px");
+    p.style.setProperty("--r", (Math.random() * 360) + "deg");
+    box.appendChild(p);
+    setTimeout(function(){ p.remove(); }, 1500);
+  }
+}
+
+// TTS
+function parrotSpeak(text) {
+  if (!window.speechSynthesis || speaking) return;
+  safeSpeak(censor(text).text, {
+    voice: getBestVoice(),
+    pitch: 1.1, rate: 0.9,
+    onstart: function() { speaking = true; elPv.classList.add("on"); elPIcon.classList.add("talking"); },
+    onend: function() { speaking = false; elPv.classList.remove("on"); elPIcon.classList.remove("talking"); },
+    onerror: function() { speaking = false; elPv.classList.remove("on"); elPIcon.classList.remove("talking"); },
+  });
+}
+
+// STT
+var stt = new PhonicsSTT({
+  onInterim: function(text) {
+    console.log("STT Interim:", text);
+    elHeardLine.innerHTML = "<span class=\"hw-interim\">" + text + "</span>";
+    elHeardLabel.style.opacity = "0.4";
+    highlightWords(text, false); // Real-time feedback!
+  },
+  onFinal: function(text) {
+    console.log("STT Final:", text);
+    elMic.classList.remove("on");
+    showResult(text);
+  },
+  onStatus: function(type) {
+    if (type === "stopped") elMic.classList.remove("on");
+  },
+  onError: function(err) {
+    console.error("STT Error details:", err);
+    elMic.classList.remove("on");
+    if (err && err.message) {
+      alert("Speech Error: " + err.message);
+    }
+  },
+});
+
+elMic.onclick = function() {
+  if (speaking) return;
+  if (elMic.classList.contains("on")) { stt.stop(); return; }
+  elHeardLine.innerHTML = "";
+  elScoreArea.classList.remove("show");
+  elMic.classList.add("on");
+  stt.start(POEM[lineIndex].text);
+};
+
+// Keyboard
+document.addEventListener("keydown", function(e) {
+  if (e.code === "Escape") {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    speaking = false;
+    elPv.classList.remove("on");
+    elPIcon.classList.remove("talking");
+    stt.stop();
+    elMic.classList.remove("on");
+  }
+  if (e.code === "Space") { e.preventDefault(); elMic.click(); }
+  if (e.code === "ArrowRight") nextLine();
+  if (e.code === "ArrowLeft") prevLine();
+  if (e.code === "KeyR" && !speaking) parrotSpeak(POEM[lineIndex].text);
+});
+
+showLine();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phonics Pong — Voice Duel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#2ec4b6">
+  <link rel="stylesheet" href="../assets/css/shared.css">
+  <style>
+    /* ── Zero-scrollbar foundation ── */
+    html, body {
+      margin:0; padding:0; width:100%; height:100%;
+      overflow:hidden;
+    }
+
+    :root { --p1:#e94560; --p2:#4361ee; --ac:#2ec4b6; }
+
+    /* ── Scale root: exact 1280×720, PhonicsLayout transforms it ── */
+    #scale-root {
+      width:1280px; height:720px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card {
+      position: absolute;
+      top: 1rem; bottom: 1.8rem; left: 1.5rem; right: 1.5rem;
+      z-index: 10;
+      border-bottom: 8px solid var(--ac) !important;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+
+    .logo h1 {
+      text-align:center; font-size:3rem; font-weight:900;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .logo h1 .gradient-text {
+      color: var(--ac);
+      text-shadow: 2px 2px 0 #1e293b;
+    }
+    .logo p { text-align:center; color:#475569; font-size:.95rem; margin-top:.5rem; line-height:1.4; font-weight: 700; }
+    .glow-badge {
+      display:inline-block; margin:.7rem auto 0; padding:.4rem 1.4rem;
+      border-radius:2rem; background:#e6fffa;
+      border:3px solid #1e293b; color:#2ec4b6;
+      font-size:.85rem; font-weight:800; text-transform:uppercase; letter-spacing:1px;
+      animation:glow-pulse 1.5s infinite alternate; text-align:center;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    @keyframes glow-pulse {
+      from{transform:scale(1)}
+      to{transform:scale(1.04);box-shadow:0 6px 0 #1e293b, 0 0 10px rgba(46,196,182,0.3)}
+    }
+
+    .players { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+    .p-card {
+      border-radius:1rem; padding:1.2rem;
+      background:#fff; border:3px solid #1e293b;
+      display:flex; flex-direction:column; gap:.7rem;
+      box-shadow: 0 5px 0 #1e293b;
+    }
+    .p-card.p1 { border-color:#1e293b; }
+    .p-card.p2 { border-color:#1e293b; }
+    .p-card h3 { font-size:1.3rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; color: #475569; }
+    .s-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.6rem; }
+    .s-btn {
+      padding:.8rem .4rem; border-radius:.6rem;
+      border:3px solid #1e293b; background:#fff;
+      color:#1e293b; font:800 .85rem "Fredoka",sans-serif;
+      cursor:pointer; transition:all 0.15s; white-space:nowrap;
+      box-shadow:0 3px 0 #1e293b;
+    }
+    .s-btn:hover:not(.active) { background:rgba(30,41,59,.05); transform:translateY(-2px); box-shadow: 0 5px 0 #1e293b; }
+    .s-btn:active:not(.active) { transform:translateY(2px); box-shadow: 0 1px 0 #1e293b; }
+    .p1 .s-btn.active { background:var(--p1); border-color:#1e293b; color:#fff; transform:translateY(-2px); box-shadow:0 5px 0 #1e293b; }
+    .p2 .s-btn.active { background:var(--p2); border-color:#1e293b; color:#fff; transform:translateY(-2px); box-shadow:0 5px 0 #1e293b; }
+
+    .launch-btn {
+      width:100%; padding:1rem; border-radius:.8rem; border:3px solid #1e293b;
+      background:#2ec4b6; color:#fff;
+      font:800 1.15rem "Fredoka", sans-serif; cursor:pointer; transition:all .15s;
+      box-shadow: 0 6px 0 #1e293b;
+    }
+    .launch-btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; box-shadow: 0 3px 0 #1e293b !important; }
+    .launch-btn:not(:disabled):hover { transform:translateY(-2px); box-shadow:0 8px 0 #1e293b; }
+    .launch-btn:not(:disabled):active { transform:translateY(4px); box-shadow:0 2px 0 #1e293b; }
+
+    .kbd-hint { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; }
+    .kbd-hint span { font-size:.7rem; color: #475569; font-weight: 700; display:flex; align-items:center; gap:.25rem; }
+    .kbd-hint kbd { background:#fff; border:2px solid #1e293b; border-radius:.25rem; padding:.05rem .3rem; font-family:monospace; font-size:.7rem; color:#1e293b; box-shadow: 0 2px 0 #1e293b; }
+
+    /* ── SETUP 2-col layout ── */
+    #setup {
+      padding: 1.2rem 1.6rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      grid-template-rows: 1fr auto;
+      gap: 1.1rem;
+      flex: 1;
+      overflow: hidden;
+      align-items: stretch;
+    }
+    .setup-left {
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 1rem;
+      padding-right: 1.2rem;
+      border-right: 3px solid #e2e8f0;
+    }
+    .setup-right {
+      display: flex; flex-direction: column; gap: 0.9rem;
+    }
+    .setup-bottom {
+      grid-column: 1 / -1;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .logo { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+    .logo h1 {
+      font-size: 2.6rem; font-weight: 900;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .logo h1 .gradient-text {
+      color: var(--ac);
+      text-shadow: 2px 2px 0 #1e293b;
+    }
+    .logo p { color:#475569; font-size:.95rem; margin-top:.2rem; line-height:1.5; font-weight: 700; text-align: center; }
+    .rules-panel {
+      background: #f8fafc; border: 2.5px solid #1e293b;
+      border-radius: 1rem; padding: 1rem 1.2rem;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    .rules-panel h4 {
+      font-size: .85rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: #475569; margin-bottom: .7rem;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .rules-list {
+      display: flex; flex-direction: column; gap: .55rem;
+    }
+    .rule-item {
+      display: flex; align-items: flex-start; gap: .6rem;
+      font-size: .88rem; font-weight: 700; color: #1e293b; line-height: 1.4;
+    }
+    .rule-icon {
+      font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem;
+    }
+
+    .glow-badge {
+      display:inline-block; padding:.4rem 1.4rem;
+      border-radius:2rem; background:#e6fffa;
+      border:3px solid #1e293b; color:#2ec4b6;
+      font-size:.85rem; font-weight:800; text-transform:uppercase; letter-spacing:1px;
+      animation:glow-pulse 1.5s infinite alternate; text-align:center;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    @keyframes glow-pulse {
+      from{transform:scale(1)}
+      to{transform:scale(1.04);box-shadow:0 6px 0 #1e293b, 0 0 10px rgba(46,196,182,0.3)}
+    }
+
+    /* ── GAME: HUD top, canvas flex:1 ── */
+    #game { display:none; flex-direction:column; }
+    #game.on { display:flex; }
+    .hud {
+      display:flex; align-items:stretch; background: #fff;
+      border-bottom:3.5px solid #1e293b;
+      flex-shrink:0;
+      height:62px;
+    }
+    .hud-side {
+      display:flex; align-items:center; gap:.6rem; padding:0 1.2rem;
+      min-width:160px; transition:background .3s;
+    }
+    .hud-side.active-side { background:rgba(46,196,182,0.08); }
+    .score { font-size:2.8rem; font-weight:900; line-height:1; min-width:1.5ch; }
+    .ph { font-size:1.15rem; font-weight:800; border: 2.5px solid #1e293b; padding: .25rem .8rem; border-radius: .4rem; background: #fff; }
+    .hud-mid {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      gap:.06rem; padding:0 .5rem; text-align:center;
+    }
+    #hud-prompt { font-size:.9rem; text-transform:uppercase; letter-spacing:1.5px; color: #475569; font-weight: 700; }
+    #hud-status { font-size:1.1rem; font-weight:800; color: #1e293b; }
+
+    /* Canvas fills remaining height: 720 - 62 = 658px */
+    #arena {
+      flex:1;
+      display:block;
+      width:100%;
+      touch-action:none;
+      background: #0c0f1d; /* keep game area dark for neon contrast */
+    }
+
+    /* ── OVERLAYS: cover entire card ── */
+    .overlay {
+      position:absolute; inset:0; z-index:20;
+      display:flex; align-items:center; justify-content:center;
+      flex-direction:column; gap:1rem;
+      background: rgba(224, 242, 254, 0.96);
+      border-radius:1.5rem;
+      color: #1e293b;
+    }
+    .overlay.off { display:none; }
+    .cd-title { font-size:1.8rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:.8rem; text-align:center; color: #ff7b00; }
+    .cd-num { font-size:8rem; font-weight:900; line-height:1; animation:pop .7s cubic-bezier(.15,1.5,.35,1) both; color: #1e293b; text-shadow: 3px 3px 0 #fff; }
+    .cd-num.go { color:var(--ac); }
+    @keyframes pop { from{transform:scale(2.5);opacity:0} to{transform:scale(1);opacity:1} }
+
+    .go-winner { font-size:2.5rem; font-weight:900; margin-bottom:1.2rem; text-align:center; text-shadow: 2px 2px 0 #fff; }
+
+    .mic-strip {
+      position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+      display:flex; align-items:center; gap:.35rem; font-size:.7rem;
+      color: #fff; font-weight: 700;
+      opacity:1; text-transform:uppercase; z-index:5;
+      background: rgba(30, 41, 59, 0.85); padding: .25rem .7rem; border-radius: 1rem; border: 1.5px solid #fff;
+    }
+    .mic-dot { width:7px; height:7px; border-radius:50%; background:var(--ac); animation:blink 1.2s ease-in-out infinite; }
+    .mic-dot.off { background:#ff4444; animation:none; opacity:.5; }
+
+    #word-log {
+      position:absolute; bottom:45px; left:50%; transform:translateX(-50%);
+      display:flex; gap:.4rem; pointer-events:none; z-index:50;
+      max-width:90%; flex-wrap:wrap; justify-content:center;
+    }
+    .word-tag {
+      font-size:.75rem; font-weight:700; padding:.2rem .5rem;
+      border-radius:.25rem; opacity:1.0; text-transform:uppercase; letter-spacing:.5px;
+      color:#fff; border: 2px solid #fff;
+    }
+
+    @media (max-width:768px) {
+      #setup{padding:1rem;gap:.8rem}
+      .logo h1{font-size:1.5rem}
+      .players{grid-template-columns:1fr;gap:.8rem}
+      .hud-side{padding:0 .5rem;min-width:80px}
+      .score{font-size:1.5rem}
+      .cd-num{font-size:5rem}
+    }
+  </style>
+</head>
+<body>
+
+<div id="rotate-msg">
+  <div class="rotate-icon">📱</div>
+  <div class="rotate-title">Rotate Your Device</div>
+  <div class="rotate-sub">Phonics Pong needs landscape mode for two players.</div>
+</div>
+
+<canvas id="bg-shader-canvas" class="bg-shader"></canvas>
+<div class="bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<div class="motes" id="motes"></div>
+
+<div id="scale-root">
+  <button id="exitBtn" class="exit-btn" title="Exit to Home">✕</button>
+
+  <!-- ── SETUP SCREEN ── -->
+  <div id="setup" class="card">
+    <!-- Left column: logo + rules -->
+    <div class="setup-left">
+      <div class="logo">
+        <h1><img src="../assets/img/poster.svg" style="height:54px;width:auto;object-fit:contain;filter:drop-shadow(0 3px 0 #1e293b);" alt="Logo"> <span class="gradient-text">Phonics Pong</span> 🏓</h1>
+        <div class="glow-badge">🎤 Voice-Controlled Paddles!</div>
+        <p>Both paddles auto-track the ball. Say your target sound word to make your paddle <b>SOLID</b> — then it deflects the ball!</p>
+      </div>
+      <div class="rules-panel">
+        <h4>🏆 How to Win</h4>
+        <div class="rules-list">
+          <div class="rule-item"><span class="rule-icon">🛡️</span><span>Say a word with your phoneme to SOLIDIFY your paddle</span></div>
+          <div class="rule-item"><span class="rule-icon">👻</span><span>Ghost paddle lets the ball pass — opponent scores!</span></div>
+          <div class="rule-item"><span class="rule-icon">⚽</span><span>After conceding, say a word to kick off and restart</span></div>
+          <div class="rule-item"><span class="rule-icon">🏅</span><span>First to <b>5 points</b> wins the duel!</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Right column: player selection -->
+    <div class="setup-right">
+      <div class="players" style="flex:1;">
+        <div class="p-card p1"><h3>← Player 1</h3><div class="s-grid" id="p1-grid"></div></div>
+        <div class="p-card p2"><h3>Player 2 →</h3><div class="s-grid" id="p2-grid"></div></div>
+      </div>
+    </div>
+    <!-- Bottom row: launch + hints -->
+    <div class="setup-bottom">
+      <button class="launch-btn" id="launch-btn" disabled>Choose a sound for each player</button>
+      <div class="kbd-hint">
+        <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> P1</span>
+        <span>·</span>
+        <span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> P2</span>
+        <span>·</span>
+        <span><kbd>Enter</kbd> Launch</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div id="game" class="card">
+    <div class="hud">
+      <div class="hud-side l" id="hud-l">
+        <div class="score" style="color:var(--p1)" id="sc1">0</div>
+        <div><div class="ph" style="color:var(--p1)" id="ph1">—</div></div>
+      </div>
+      <div class="hud-mid"><div id="hud-prompt">get ready</div><div id="hud-status"></div></div>
+      <div class="hud-side r" id="hud-r" style="flex-direction:row-reverse; padding-right:3.5rem;">
+        <div class="score" style="color:var(--p2)" id="sc2">0</div>
+        <div style="text-align:right"><div class="ph" style="color:var(--p2)" id="ph2">—</div></div>
+      </div>
+    </div>
+    <canvas id="arena"></canvas>
+    <div class="overlay" id="ov-cd">
+      <div class="cd-title" id="cd-title"></div>
+      <div class="cd-num" id="cd-num">3</div>
+    </div>
+    <div class="overlay off" id="ov-end">
+      <div class="go-winner" id="go-winner"></div>
+      <button class="again-btn" id="btn-again">Play Again</button>
+    </div>
+    <!-- Kick-off overlay -->
+    <div class="overlay off" id="ov-kickoff">
+      <div class="cd-title" id="ko-player"></div>
+      <div style="font-size:5rem;line-height:1;">⚽</div>
+      <div style="font-size:1.5rem;font-weight:800;color:#1e293b;text-align:center;max-width:560px;line-height:1.4;" id="ko-instruction"></div>
+    </div>
+    <div class="mic-strip"><div class="mic-dot" id="mic-dot"></div><span id="mic-label">listening</span></div>
+    <div id="word-log"></div>
+  </div>
+</div>
+
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/audio.js"></script>
+<script src="../assets/js/stt.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script>
+"use strict";
+
+var DESIGN_W = 1280, DESIGN_H = 720;
+new PhonicsLayout(DESIGN_W, DESIGN_H);
+
+var WIN_SCORE = 5;
+var PADDLE_W = 14, PADDLE_H = 90, PADDLE_EDGE = 22, BALL_R = 9;
+var BASE_SPD = 4.0, MAX_SPD = 10.0, SPD_INC = 0.24, TRACK_SPD = 7.2;
+var SOLID_MS = 3000;
+
+var COLORS = { P1:"#e94560", P2:"#4361ee", ACCENT:"#2ec4b6", BALL:"#ffffff" };
+
+// Load phonemes from CUSTOM_POEM
+var PHONEMES = [];
+(function() {
+  var raw = localStorage.getItem("CUSTOM_POEM");
+  if (!raw) return;
+  try {
+    var poem = JSON.parse(raw);
+    var map = {}; // ipa → Set of words
+    for (var li = 0; li < poem.length; li++) {
+      var targets = poem[li].targets;
+      var keys = Object.keys(targets);
+      for (var ki = 0; ki < keys.length; ki++) {
+        var w = keys[ki];
+        var ipa = targets[w];
+        if (!map[ipa]) map[ipa] = {};
+        map[ipa][w.toLowerCase()] = true;
+      }
+    }
+    var ipaKeys = Object.keys(map);
+    for (var ik = 0; ik < ipaKeys.length; ik++) {
+      var ipaVal = ipaKeys[ik];
+      var wordList = Object.keys(map[ipaVal]);
+      PHONEMES.push({ id:ipaVal, label:ipaVal, words:wordList });
+    }
+  } catch(e) {}
+})();
+
+if (PHONEMES.length === 0) {
+  // Show error when DOM is ready (avoids window.onload conflict)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showEmptyLessonError);
+  } else {
+    showEmptyLessonError();
+  }
+} else {
+
+// ── Game state ───────────────────────────────────────────
+var gs = 0; // 0=setup, 1=countdown, 2=playing, 3=scored, 4=over
+var cfg = { p1:null, p2:null };
+var ball, pd1, pd2;
+var particles = [];
+var flashes = [];
+var rafId = null;
+var usedWordsP1 = {};
+var usedWordsP2 = {};
+var kickOffHandler = null; // soccer kick-off: set during gs===3 waiting state
+
+var D = {
+  setup: document.getElementById("setup"), game: document.getElementById("game"),
+  launchBtn: document.getElementById("launch-btn"),
+  sc1: document.getElementById("sc1"), sc2: document.getElementById("sc2"),
+  ph1: document.getElementById("ph1"), ph2: document.getElementById("ph2"),
+  hudPrompt: document.getElementById("hud-prompt"), hudStatus: document.getElementById("hud-status"),
+  hudL: document.getElementById("hud-l"), hudR: document.getElementById("hud-r"),
+  arena: document.getElementById("arena"), ovCD: document.getElementById("ov-cd"),
+  cdTitle: document.getElementById("cd-title"), cdNum: document.getElementById("cd-num"),
+  ovEnd: document.getElementById("ov-end"), goWinner: document.getElementById("go-winner"),
+  btnAgain: document.getElementById("btn-again"),
+  ovKickoff: document.getElementById("ov-kickoff"),
+  koPlayer: document.getElementById("ko-player"), koInstruction: document.getElementById("ko-instruction"),
+  micDot: document.getElementById("mic-dot"), micLabel: document.getElementById("mic-label"),
+  wordLog: document.getElementById("word-log"),
+};
+var ctx = D.arena.getContext("2d");
+
+// ── Exit button ──────────────────────────────────────────
+document.getElementById("exitBtn").onclick = function() {
+  window.location.href = "../index.html";
+};
+
+// ── STT Engine (always-on during gameplay) ──────────────────
+var stt = new PhonicsSTT({
+  continuous: true,
+  onInterim: processVoice,
+  onFinal: function(text) {
+    processVoice(text);
+  },
+  onStatus: function(type, msg) {
+    if (type === "retrying") {
+      D.micDot.classList.add("off");
+      D.micLabel.textContent = msg || "retrying…";
+    }
+    if (type === "recording") {
+      D.micDot.classList.remove("off");
+      D.micLabel.textContent = "listening";
+    }
+    if (type === "stopped") {
+      D.micDot.classList.add("off");
+      D.micLabel.textContent = "stopped";
+    }
+  },
+  onError: function() {
+    D.micDot.classList.add("off");
+    D.micLabel.textContent = "mic error — restarting…";
+    setTimeout(function() {
+      if (gs === 2) {
+        D.micDot.classList.remove("off");
+        D.micLabel.textContent = "listening";
+        stt.start();
+      }
+    }, 2000);
+  },
+});
+
+// Health-check: ensure STT is running during gameplay
+setInterval(function() {
+  if (gs === 2 && !stt.isRecording()) stt.start();
+}, 3000);
+
+function processVoice(raw) {
+  // Soccer kick-off: during gs===3, route to kick-off handler
+  if (gs === 3 && kickOffHandler) { kickOffHandler(raw); return; }
+  if (gs !== 2) return;
+  var text = raw.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+  var words = text.split(/\s+/).filter(function(w){ return w.length >= 2; });
+  var ballLeft = ball.dx < 0;
+  var pd = ballLeft ? pd1 : pd2;
+  var phoneme = ballLeft ? cfg.p1 : cfg.p2;
+  var usedMap = ballLeft ? usedWordsP1 : usedWordsP2;
+
+  if (pd.solid) return; // already active
+
+  for (var wi = 0; wi < words.length; wi++) {
+    var w = words[wi];
+    
+    // Fuzzy matching against target words
+    var matchedTarget = null;
+    for (var ti = 0; ti < phoneme.words.length; ti++) {
+      var target = phoneme.words[ti];
+      var d = levenshtein(target, w);
+      var threshold = Math.max(1, Math.floor(target.length / 3));
+      if (d <= threshold) {
+        matchedTarget = target;
+        break;
+      }
+    }
+
+    var isMatch = matchedTarget || phoneme.words.indexOf(w) >= 0 || (typeof wordHasPhoneme === "function" && wordHasPhoneme(w, phoneme.label));
+    if (isMatch) {
+      var matchWord = matchedTarget || w;
+      if (usedMap[matchWord]) continue;
+      usedMap[matchWord] = true;
+      activatePaddle(pd);
+      D.wordLog.innerHTML = "<span class=\"word-tag\" style=\"background:" + (ballLeft ? "rgba(233,69,96,.3)" : "rgba(67,97,238,.3)") + "\">" + matchWord + "</span>" + D.wordLog.innerHTML;
+
+      logPerformance({
+        activity: "pingpong",
+        target: phoneme.label,
+        phoneme: phoneme.label,
+        spoken: w,
+        score: 100,
+        verdict: "correct"
+      });
+      break;
+    }
+  }
+}
+
+// ── Paddle helpers ───────────────────────────────────────
+function makePaddle(p) {
+  return {
+    player:p, x:p===1?PADDLE_EDGE:DESIGN_W-PADDLE_EDGE-PADDLE_W,
+    y:(DESIGN_H-56)/2-PADDLE_H/2, score:0,
+    color:p===1?COLORS.P1:COLORS.P2, solid:false, glow:0, touching:false,
+  };
+}
+
+function makeBall(dir) {
+  // Launch at a wider dynamic angle (-20 to +20 degrees) with minimum vertical slope
+  var angle = (Math.random() * 0.7 - 0.35);
+  if (Math.abs(Math.sin(angle)) < 0.25) {
+    angle = (angle >= 0 ? 0.25 : -0.25);
+  }
+  return {
+    x:DESIGN_W/2, y:(DESIGN_H-56)/2,
+    dx:dir*BASE_SPD*Math.cos(angle), dy:BASE_SPD*Math.sin(angle),
+    spd:BASE_SPD, trail:[],
+  };
+}
+
+function activatePaddle(pd) {
+  pd.solid = true;
+  spawnFlash("SOLID!", pd.x, pd.y - 30, pd.color);
+  if (pd._timer) clearTimeout(pd._timer);
+  pd._timer = setTimeout(function(){ pd.solid = false; }, SOLID_MS);
+}
+
+// ── Physics ──────────────────────────────────────────────
+function clamp(v, lo, hi) { return v<lo?lo:v>hi?hi:v; }
+
+function physicsUpdate() {
+  var W = DESIGN_W, H = D.arena.height;
+  ball.x += ball.dx; ball.y += ball.dy;
+  ball.trail.push({x:ball.x,y:ball.y});
+  if (ball.trail.length > 14) ball.trail.shift();
+
+  // Wall bounce
+  if (ball.y - BALL_R <= 0) { 
+    ball.y = BALL_R; 
+    ball.dy = Math.abs(ball.dy); 
+    spawnParticles(ball.x, BALL_R, "#888", 3); 
+    PhonicsAudio.playClick();
+  }
+  else if (ball.y + BALL_R >= H) { 
+    ball.y = H - BALL_R; 
+    ball.dy = -Math.abs(ball.dy); 
+    spawnParticles(ball.x, H-BALL_R, "#888", 3); 
+    PhonicsAudio.playClick();
+  }
+
+  checkCollision(pd1, true);
+  checkCollision(pd2, false);
+
+  // Scoring
+  if (ball.x + BALL_R < 0) { registerScore(2); return; }
+  if (ball.x - BALL_R > W) { registerScore(1); return; }
+
+  // Paddle tracking
+  var targetY = ball.y - PADDLE_H / 2;
+  pd1.y += clamp(targetY - pd1.y, -TRACK_SPD, TRACK_SPD);
+  pd2.y += clamp(targetY - pd2.y, -TRACK_SPD, TRACK_SPD);
+  pd1.y = clamp(pd1.y, 0, H - PADDLE_H);
+  pd2.y = clamp(pd2.y, 0, H - PADDLE_H);
+
+  pd1.glow = Math.max(0, pd1.glow - 1.5);
+  pd2.glow = Math.max(0, pd2.glow - 1.5);
+
+  // Particles
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 3;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  // Flashes
+  for (var j = flashes.length - 1; j >= 0; j--) {
+    flashes[j].y -= 1.3; flashes[j].life -= 2.5;
+    if (flashes[j].life <= 0) flashes.splice(j, 1);
+  }
+
+  updateHUD();
+}
+
+function checkCollision(pd, isLeft) {
+  if (isLeft ? ball.dx >= 0 : ball.dx <= 0) { pd.touching = false; return; }
+  var cx = clamp(ball.x, pd.x, pd.x + PADDLE_W);
+  var cy = clamp(ball.y, pd.y, pd.y + PADDLE_H);
+  var dist = (ball.x - cx) * (ball.x - cx) + (ball.y - cy) * (ball.y - cy);
+  if (dist > BALL_R * BALL_R) { pd.touching = false; return; }
+  if (pd.touching) return;
+  pd.touching = true;
+  if (!pd.solid) return; // ball passes through ghost paddle
+
+  var rel = clamp((ball.y - (pd.y + PADDLE_H / 2)) / (PADDLE_H / 2), -0.85, 0.85);
+  // Add a random deflection offset to make bounces dynamic even with auto-tracking
+  var randomDeflect = (Math.random() * 0.8 - 0.4); // approx -23 to +23 degrees
+  var angle = rel * (Math.PI / 3.5) + randomDeflect;
+  
+  // Enforce a minimum vertical velocity to prevent horizontal line lock
+  if (Math.abs(Math.sin(angle)) < 0.2) {
+    angle = (angle >= 0 ? 0.2 : -0.2);
+  }
+  
+  ball.spd = Math.min(ball.spd + SPD_INC, MAX_SPD);
+  ball.dx = (isLeft ? 1 : -1) * ball.spd * Math.cos(angle);
+  ball.dy = ball.spd * Math.sin(angle);
+  ball.x = isLeft ? pd.x + PADDLE_W + BALL_R + 2 : pd.x - BALL_R - 2;
+  pd.solid = false;
+  pd.glow = 35;
+  PhonicsAudio.playClick();
+  spawnParticles(ball.x, ball.y, pd.color, 18);
+  spawnFlash("✓ NICE!", ball.x, ball.y - 20, pd.color);
+}
+
+function registerScore(scorer) {
+  gs = 3;
+  if (rafId) cancelAnimationFrame(rafId);
+  var pd = scorer === 1 ? pd1 : pd2;
+  pd.score++;
+  D["sc" + scorer].textContent = pd.score;
+  PhonicsAudio.playSuccess();
+
+  // Log missed paddle performance
+  if (scorer === 2 && cfg.p1) {
+    logPerformance({
+      activity: "pingpong",
+      target: cfg.p1.label,
+      phoneme: cfg.p1.label,
+      spoken: "",
+      score: 0,
+      verdict: "incorrect"
+    });
+  } else if (scorer === 1 && cfg.p2) {
+    logPerformance({
+      activity: "pingpong",
+      target: cfg.p2.label,
+      phoneme: cfg.p2.label,
+      spoken: "",
+      score: 0,
+      verdict: "incorrect"
+    });
+  }
+
+  if (pd1.score >= WIN_SCORE || pd2.score >= WIN_SCORE) { setTimeout(endGame, 900); return; }
+
+  // Soccer kick-off: loser must say a word to restart play
+  var loser = scorer === 1 ? 2 : 1;
+  var loserPhoneme = loser === 1 ? cfg.p1 : cfg.p2;
+  var loserPd = loser === 1 ? pd1 : pd2;
+  var loserColor = loser === 1 ? COLORS.P1 : COLORS.P2;
+
+  D.hudPrompt.textContent = "P" + loser + " · SAY A \"" + loserPhoneme.label + "\" WORD TO RESTART";
+  D.hudStatus.textContent = "⚽ KICK OFF — WAITING...";
+
+  // Show kick-off overlay
+  D.koPlayer.textContent = "PLAYER " + loser + " — KICK OFF!";
+  D.koPlayer.style.color = loserColor;
+  D.koInstruction.textContent = 'Say a \"' + loserPhoneme.label + '\" word to restart the ball...';
+  D.ovKickoff.classList.remove("off");
+
+  // Temporarily enter a waiting state: listen for loser to say a word
+  gs = 3; // keep paused
+  kickOffHandler = function(raw) {
+    if (gs !== 3) return;
+    var text = raw.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    var words = text.split(/\s+/).filter(function(w){ return w.length >= 2; });
+    var usedMap = loser === 1 ? usedWordsP1 : usedWordsP2;
+    for (var wi = 0; wi < words.length; wi++) {
+      var w = words[wi];
+      var matchedTarget = null;
+      for (var ti = 0; ti < loserPhoneme.words.length; ti++) {
+        var target = loserPhoneme.words[ti];
+        var d = levenshtein(target, w);
+        var threshold = Math.max(1, Math.floor(target.length / 3));
+        if (d <= threshold) { matchedTarget = target; break; }
+      }
+      var isMatch = matchedTarget || loserPhoneme.words.indexOf(w) >= 0 || (typeof wordHasPhoneme === "function" && wordHasPhoneme(w, loserPhoneme.label));
+      if (isMatch) {
+        var matchWord = matchedTarget || w;
+        usedMap[matchWord] = true;
+        logPerformance({ activity: "pingpong", target: loserPhoneme.label, phoneme: loserPhoneme.label, spoken: matchWord, score: 100, verdict: "correct" });
+        // Restart — ball heads toward the loser's side (they serve)
+        ball = makeBall(loser === 1 ? 1 : -1);
+        loserPd.solid = true;
+        if (loserPd._timer) clearTimeout(loserPd._timer);
+        loserPd._timer = setTimeout(function(){ loserPd.solid = false; }, SOLID_MS);
+        PhonicsAudio.playStart();
+        spawnFlash("GO!", DESIGN_W / 2, (D.arena.height || 400) / 2, COLORS.ACCENT);
+        D.ovKickoff.classList.add("off");
+        kickOffHandler = null;
+        gs = 2;
+        loop();
+        return;
+      }
+    }
+  };
+}
+
+function endGame() {
+  gs = 4;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  stt.stop();
+  D.goWinner.textContent = pd1.score >= WIN_SCORE ? "PLAYER 1 WINS!" : "PLAYER 2 WINS!";
+  D.goWinner.style.color = pd1.score >= WIN_SCORE ? COLORS.P1 : COLORS.P2;
+  D.ovEnd.classList.remove("off");
+}
+
+// ── Rendering ────────────────────────────────────────────
+function renderFrame() {
+  var W = DESIGN_W, H = D.arena.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // 1. Draw Green Table Surface
+  ctx.fillStyle = "#184e2a"; // forest green ping pong table surface
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Draw White Table Borders
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, W, H);
+
+  // 3. Draw horizontal white line dividing the courts
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, H/2);
+  ctx.lineTo(W, H/2);
+  ctx.stroke();
+
+  // 4. Draw Vertical Net line in center
+  ctx.strokeStyle = "rgba(255,255,255,0.5)";
+  ctx.lineWidth = 4;
+  ctx.beginPath(); 
+  ctx.moveTo(W/2, 0); 
+  ctx.lineTo(W/2, H); 
+  ctx.stroke();
+
+  // Ball trail
+  for (var ti = 0; ti < ball.trail.length; ti++) {
+    var t = ball.trail[ti];
+    var f = ti / ball.trail.length;
+    ctx.fillStyle = "rgba(255,255,255," + (f * 0.3).toFixed(2) + ")";
+    ctx.beginPath(); ctx.arc(t.x, t.y, Math.max(BALL_R * f * 0.8, 1), 0, 7); ctx.fill();
+  }
+
+  // Ball
+  ctx.fillStyle = COLORS.BALL;
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, 7); ctx.fill();
+
+  // Paddles
+  [pd1, pd2].forEach(function(p) {
+    ctx.globalAlpha = p.solid ? 1.0 : 0.15;
+    ctx.fillStyle = p.color;
+    var r = 6;
+    ctx.beginPath();
+    ctx.moveTo(p.x+r, p.y);
+    ctx.arcTo(p.x+PADDLE_W, p.y, p.x+PADDLE_W, p.y+PADDLE_H, r);
+    ctx.arcTo(p.x+PADDLE_W, p.y+PADDLE_H, p.x, p.y+PADDLE_H, r);
+    ctx.arcTo(p.x, p.y+PADDLE_H, p.x, p.y, r);
+    ctx.arcTo(p.x, p.y, p.x+PADDLE_W, p.y, r);
+    ctx.fill();
+    if (p.solid) {
+      ctx.shadowBlur = 20; ctx.shadowColor = p.color;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1.0;
+  });
+
+  // Particles
+  for (var pi = 0; pi < particles.length; pi++) {
+    var pa = particles[pi];
+    ctx.fillStyle = "rgba(" + pa.rgb + "," + (pa.life / 100).toFixed(2) + ")";
+    ctx.fillRect(pa.x - pa.s/2, pa.y - pa.s/2, pa.s, pa.s);
+  }
+
+  // Flashes
+  ctx.textAlign = "center";
+  ctx.font = "bold 16px sans-serif";
+  for (var fi = 0; fi < flashes.length; fi++) {
+    var fl = flashes[fi];
+    ctx.fillStyle = "rgba(" + fl.rgb + "," + (fl.life / 100).toFixed(2) + ")";
+    ctx.fillText(fl.txt, fl.x, fl.y);
+  }
+}
+
+function updateHUD() {
+  var ballLeft = ball.dx < 0;
+  D.hudL.classList.toggle("active-side", ballLeft);
+  D.hudR.classList.toggle("active-side", !ballLeft);
+  var phoneme = ballLeft ? cfg.p1 : cfg.p2;
+  var pd = ballLeft ? pd1 : pd2;
+  D.hudPrompt.textContent = (ballLeft ? "P1" : "P2") + " · SAY A \"" + phoneme.label + "\" WORD";
+  D.hudStatus.textContent = pd.solid ? "🛡️ SHIELD READY" : "LISTENING...";
+}
+
+// ── Effects ──────────────────────────────────────────────
+function hexToRgb(h) { var n = parseInt(h.slice(1), 16); return ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255); }
+
+function spawnParticles(x, y, hex, n) {
+  var rgb = hexToRgb(hex);
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * 7;
+    var s = 1 + Math.random() * 3;
+    particles.push({ x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, s:2+Math.random()*3, rgb:rgb, life:60+Math.random()*40 });
+  }
+}
+
+function spawnFlash(txt, x, y, hex) {
+  flashes.push({ txt:txt, x:x, y:y, rgb:hexToRgb(hex), life:100 });
+}
+
+// ── Game lifecycle ───────────────────────────────────────
+function buildSetupGrids() {
+  var p1grid = document.getElementById("p1-grid");
+  var p2grid = document.getElementById("p2-grid");
+  for (var pi = 0; pi < PHONEMES.length; pi++) {
+    (function(ph) {
+      var b1 = document.createElement("button"); b1.className = "s-btn"; b1.textContent = ph.label;
+      b1.onclick = function() {
+        if (cfg.p2 && cfg.p2.id === ph.id) return;
+        var btns = p1grid.querySelectorAll(".s-btn"); for (var i=0;i<btns.length;i++) btns[i].classList.remove("active");
+        b1.classList.add("active"); cfg.p1 = ph;
+        if (cfg.p1 && cfg.p2) { D.launchBtn.disabled = false; D.launchBtn.textContent = "▶ Start Duel!"; }
+      };
+      p1grid.appendChild(b1);
+
+      var b2 = document.createElement("button"); b2.className = "s-btn"; b2.textContent = ph.label;
+      b2.onclick = function() {
+        if (cfg.p1 && cfg.p1.id === ph.id) return;
+        var btns = p2grid.querySelectorAll(".s-btn"); for (var j=0;j<btns.length;j++) btns[j].classList.remove("active");
+        b2.classList.add("active"); cfg.p2 = ph;
+        if (cfg.p1 && cfg.p2) { D.launchBtn.disabled = false; D.launchBtn.textContent = "▶ Start Duel!"; }
+      };
+      p2grid.appendChild(b2);
+    })(PHONEMES[pi]);
+  }
+}
+
+function startGame() {
+  D.setup.style.display = "none";
+  D.game.classList.add("on");
+  D.arena.width = DESIGN_W;
+  D.arena.height = DESIGN_H - 56;
+
+  var dir = Math.random() > 0.5 ? 1 : -1;
+  pd1 = makePaddle(1); pd2 = makePaddle(2);
+  ball = makeBall(dir);
+  particles = []; flashes = [];
+  usedWordsP1 = {}; usedWordsP2 = {};
+
+  D.sc1.textContent = "0"; D.sc2.textContent = "0";
+  D.ph1.textContent = cfg.p1.label.toUpperCase();
+  D.ph2.textContent = cfg.p2.label.toUpperCase();
+  D.ovEnd.classList.add("off");
+  D.wordLog.innerHTML = "";
+  PhonicsAudio.playStart();
+
+  var startPlayer = dir === -1 ? 1 : 2;
+  D.cdTitle.textContent = "Player " + startPlayer + " Get Ready!";
+  D.cdTitle.style.color = startPlayer === 1 ? COLORS.P1 : COLORS.P2;
+  runCountdown(3);
+}
+
+function runCountdown(n) {
+  gs = 1; D.ovCD.classList.remove("off");
+  (function tick(n) {
+    D.cdNum.textContent = n > 0 ? n : "GO!";
+    D.cdNum.classList.toggle("go", n === 0);
+    if (n > 0) setTimeout(function(){ tick(n - 1); }, 900);
+    else setTimeout(function(){ D.ovCD.classList.add("off"); gs = 2; loop(); stt.start(); }, 650);
+  })(n);
+}
+
+function loop() {
+  if (gs === 2) { physicsUpdate(); renderFrame(); rafId = requestAnimationFrame(loop); }
+}
+
+// ── Init ────────────────────────────────────────────────
+buildSetupGrids();
+D.btnAgain.onclick = function() { location.reload(); };
+
+async function tryStartGame() {
+  await requestMicPermission(
+    function() { startGame(); },
+    function() { alert("Microphone permission required for Phonics Pong voice controls!"); }
+  );
+}
+D.launchBtn.onclick = tryStartGame;
+
+// Keyboard shortcuts for setup
+document.addEventListener("keydown", function(e) {
+  if (gs !== 0) return;
+  var key = e.key;
+  var p1idx = ["1","2","3","4"].indexOf(key);
+  if (p1idx !== -1 && p1idx < PHONEMES.length) {
+    document.getElementById("p1-grid").querySelectorAll(".s-btn")[p1idx] && document.getElementById("p1-grid").querySelectorAll(".s-btn")[p1idx].click();
+    return;
+  }
+  var p2idx = ["q","w","e","r"].indexOf(key.toLowerCase());
+  if (p2idx !== -1 && p2idx < PHONEMES.length) {
+    document.getElementById("p2-grid").querySelectorAll(".s-btn")[p2idx] && document.getElementById("p2-grid").querySelectorAll(".s-btn")[p2idx].click();
+    return;
+  }
+  if ((key === "Enter" || key === " ") && !D.launchBtn.disabled) { e.preventDefault(); tryStartGame(); }
+});
+
+}
+</script>
+</body>
+</html>

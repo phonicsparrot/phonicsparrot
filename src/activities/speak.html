@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phonics Parrot — My Free Time Poem</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#2ec4b6">
+  <link rel="stylesheet" href="../assets/css/shared.css">
+  <style>
+    .card {
+      position: absolute;
+      top: 1rem; bottom: 1.8rem; left: 1.5rem; right: 1.5rem;
+      border-bottom: 8px solid #4361ee !important;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Decorative elements */
+    .decor-wing {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: clamp(140px, 20vw, 240px);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.9;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+    .decor-left { left: 0.5rem; }
+    .decor-right { right: 0.5rem; }
+    .decor-img { width: 100%; height: 100%; object-fit: fill; }
+
+    /* Name entry screen */
+    .name-screen {
+      position:absolute; inset:0; z-index:190;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background: rgba(224, 242, 254, 0.98); transition:opacity .5s,visibility .5s;
+      opacity:0; visibility:hidden; color: #1e293b;
+    }
+    .name-screen.show { opacity:1; visibility:visible; }
+    .name-screen.gone { opacity:0; visibility:hidden; pointer-events:none; }
+    .name-screen h2 {
+      font-size:2.2rem; font-weight:800; margin-bottom:.5rem;
+      color: #ff7b00;
+      text-shadow: 2px 2px 0 #1e293b;
+    }
+    .name-screen p { color: #475569; font-size:1.1rem; margin-bottom:1.8rem; text-align:center; max-width:380px; line-height:1.6; font-weight: 600; }
+    .name-input {
+      background:#fff; border:3px solid #1e293b;
+      border-radius:18px; color:#1e293b; font-size:1.4rem; font-weight:700;
+      padding:.75rem 1.4rem; width:320px; text-align:center;
+      font-family:inherit; outline:none; transition:border-color .3s;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    .name-input:focus { border-color:#2ec4b6; }
+    .name-go {
+      margin-top:1.2rem; padding:.9rem 2.6rem; font-size:1.15rem; font-weight:800;
+      border:3px solid #1e293b; border-radius:18px; background:#ff7b00;
+      color:#fff; cursor:pointer; font-family:inherit;
+      transition:transform .1s,box-shadow .1s; box-shadow:0 6px 0 #1e293b;
+    }
+    .name-go:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #1e293b; }
+    .name-go:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e293b; }
+    
+    .parrot-big { font-size:4.5rem; margin-bottom:.85rem; animation:parrot-bob 2.2s ease-in-out infinite; filter:drop-shadow(0 4px 0 rgba(30,41,59,0.15)); }
+
+    /* Main app */
+    .app {
+      position:absolute; inset:0; z-index:10;
+      display:grid; grid-template-rows:auto auto 1fr auto auto;
+      padding:.6rem 1.5rem .5rem; gap:0; overflow:hidden;
+      min-height: 0;
+    }
+    .head { text-align:center; width:100%; }
+    .head h1 { font-size:2.2rem; font-weight:850; display:flex; align-items:center; justify-content:center; gap:.6rem; color: #1e293b; }
+    .head h1 .p-icon { font-size:2.6rem; filter:drop-shadow(0 4px 0 rgba(30,41,59,0.15)); transition:filter .3s; }
+    .head h1 .p-icon.talking { animation:talk-bob .4s ease infinite alternate; }
+    .student-name-tag { font-size:.9rem; color:#475569; margin-top:.15rem; font-weight:700; }
+    .student-name-tag strong { color:#ff7b00; opacity:1; }
+
+    .progress-section { display:flex; align-items:center; gap:1rem; width:100%; padding:.4rem 0; }
+    .progress-bar { flex:1; height:12px; background:rgba(30,41,59,0.06); border: 2.5px solid #1e293b; border-radius:6px; overflow:hidden; }
+    .progress-fill { height:100%; border-radius:4px; background:#4361ee; transition:width .6s cubic-bezier(.4,0,.2,1); }
+    .stanza-counter { font-size:.8rem; color:#475569; font-weight:700; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+
+    .stanza-card { width:100%; background:rgba(255,255,255,0.75); border:3px solid #1e293b; border-radius:20px; padding:1.4rem 1.5rem 0.8rem; position:relative; overflow:hidden; display:flex; flex-direction:column;
+      min-height: 0; flex: 1; box-shadow: 0 4px 0 #1e293b;
+    }
+    .stanza-label { font-size:.8rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#475569; margin-bottom:.7rem; display:flex; align-items:center; gap:.45rem; }
+    .stanza-label .sl-num { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; border:2.5px solid #1e293b; background: #fff; color: #1e293b; }
+    .stanza-lines { display:flex; flex-direction:column; gap:.6rem; flex:1; }
+
+    .poem-line { display:flex; align-items:center; gap:1rem; position:relative; padding:.65rem 1rem; border-radius:.8rem; transition:background .2s; margin-bottom:.25rem; }
+    .poem-line:hover { background:rgba(30,41,59,.03); }
+    .poem-line.recording-line { background:rgba(233,69,96,.08); border:2px dashed #e94560; }
+    .poem-line.line-complete { background:rgba(46,196,182,.06); border:2.5px solid #1e293b; }
+
+    .line-type { font-size:.8rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:.35rem .8rem; border-radius:.5rem; border: 2px solid #1e293b; white-space:nowrap; min-width:60px; text-align:center; flex-shrink:0; }
+    .lt-chant { background:#ffe3e3; color:#e94560; }
+    .lt-ask   { background:#eef2ff; color:#4361ee; }
+    .lt-ans   { background:#e6fffa; color:#2ec4b6; }
+
+    .line-template { flex:1; font-size:clamp(2.5rem, 4vw, 4.5rem); line-height:1.5; text-align:center; color: #1e293b; font-weight: 700; }
+    .line-template .tpl-word { display:inline; transition:color .3s; }
+    .line-template .tpl-word.verified { color:#1e293b; text-decoration: underline; text-decoration-color: #2ec4b6; text-decoration-thickness: 3px; }
+    .line-template .blank {
+      display:inline-block; min-width:140px; vertical-align:baseline;
+      height: 0.85em; line-height: 0.85;
+      border-bottom:5px solid #1e293b; margin:0 .3em;
+      position:relative; transition:border-color .3s;
+    }
+    .line-template .blank.filled { border-bottom-color:#2ec4b6; color:#2ec4b6; font-weight:800; font-size:clamp(2.5rem, 4vw, 4.5rem); text-align:center; vertical-align:baseline; }
+    .line-template .blank.recording { border-bottom-color:#e94560; animation:blink-border .5s ease infinite alternate; }
+    @keyframes blink-border { from{border-bottom-color:#e94560} to{border-bottom-color:transparent} }
+
+    /* ── Row icon buttons ── */
+    .rec-btn, .play-btn, .ai-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid #1e293b;
+      background: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      transition: all .15s; flex-shrink: 0;
+      font-family: inherit;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    .rec-btn:hover, .play-btn:hover, .ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #1e293b; }
+    .rec-btn:active, .play-btn:active, .ai-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1e293b; }
+    
+    /* Record button */
+    .rec-btn { color: #e94560; }
+    .rec-btn.active { border-color: #1e293b; color: #fff; background: #e94560; animation: mic-glow-sm .8s ease infinite; }
+    .rec-btn.done { border-color: #1e293b; color: #fff; background: #2ec4b6; }
+    /* Play button */
+    .play-btn { color: #4361ee; }
+    .play-btn.speaking { border-color: #1e293b; color: #fff; background: #2ec4b6; animation: mic-glow-sm .6s ease infinite; }
+    /* AI button */
+    .ai-btn { color: #ff7b00; background: #fff; }
+    .ai-btn.thinking { animation: spin-ai 1s linear infinite; cursor: wait; }
+    @keyframes spin-ai { to { transform: rotate(360deg); } }
+
+    @keyframes mic-glow-sm { 0%,100%{box-shadow:0 4px 0 #1e293b} 50%{box-shadow:0 4px 0 #1e293b, 0 0 12px rgba(233,69,96,.4)} }
+
+    .mic-status { display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:1.7rem; font-size:.95rem; font-weight:700; color:#475569; transition:all .3s; padding:.1rem 0; }
+    .mic-status.recording { color:#e94560; }
+    .mic-waves { display:flex; gap:2.5px; align-items:center; height:16px; }
+    .mic-waves span { width:3px; border-radius:2px; background:#e94560; animation:wave-bar .7s ease-in-out infinite; }
+
+    .bottom-bar { display:flex; align-items:center; justify-content:space-between; width:100%; padding:.4rem 0; gap:.8rem; }
+    .shortcuts { display:flex; gap:.35rem; align-items:center; flex-wrap:wrap; }
+    .shortcut-tag { font-size:.75rem; font-weight: 700; padding:.3rem .7rem; border-radius:.5rem; background:#fff; border:2.5px solid #1e293b; color:#1e293b; display:flex; align-items:center; gap:.25rem; white-space:nowrap; box-shadow: 0 3px 0 #1e293b; }
+    .stanza-nav { display:flex; align-items:center; gap:.5rem; }
+    
+    .nav-btn {
+      /* base style from shared.css */
+      padding: .65rem 1.6rem;
+      font-size: 1rem;
+      background: #fff;
+      color: #1e293b;
+    }
+    .nav-btn.primary { background:#4361ee; color:#fff; }
+    .nav-btn.finish { background:#ff7b00; color:#fff; }
+
+    .stanza-dots { display:flex; gap:.5rem; align-items:center; }
+    .stanza-dot {
+      width: 24px; height: 24px; border-radius: 50%; border: 3px solid #1e293b; background: #fff; cursor: pointer; transition: all .2s;
+      display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #1e293b;
+      box-shadow: 0 3px 0 #1e293b;
+    }
+    .stanza-dot.active { border-color: #1e293b; background: #4361ee; color: #fff; box-shadow: 0 4px 0 #1e293b; }
+    .stanza-dot.complete { border-color: #1e293b; background: #2ec4b6; color: #fff; }
+
+    .pronunciation-feedback { margin-top:.3rem; padding:.4rem .8rem; border-radius:.6rem; font-size:.85rem; font-weight:700; border: 2.5px solid #1e293b; box-shadow: 0 3px 0 #1e293b; display:none; align-items:center; gap:.35rem; }
+    .pronunciation-feedback.show { display:flex; }
+    .pronunciation-feedback.good { background: #e6fffa; color: #14b8a6; }
+    .pronunciation-feedback.warn { background: #fffbeb; color: #d97706; }
+    .pronunciation-feedback.retry { background: #ffebee; color: #e94560; }
+
+    .live-transcript { font-size:.85rem; color:#475569; font-weight:700; font-style:italic; min-height:1.1em; margin-top:.15rem; text-align:center; }
+
+    /* Review screen */
+    .review-screen {
+      position:absolute; inset:0; z-index:150; background: rgba(224, 242, 254, 0.98);
+      display:flex; flex-direction:column; align-items:center;
+      padding:1.5rem 1.2rem; overflow-y:auto; color: #1e293b;
+      opacity:0; visibility:hidden; transition:opacity .4s,visibility .4s;
+    }
+    .review-screen.show { opacity:1; visibility:visible; }
+    .review-screen h2 { font-size:2rem; font-weight:800; margin-bottom:.4rem; display:flex; align-items:center; gap:0.5rem; justify-content:center; color: #ff7b00; text-shadow: 1px 1px 0 #fff; }
+    .poem-preview { width:100%; max-width:640px; background:#fff; border:3.5px solid #1e293b; border-radius:1.5rem; padding:1.5rem 2rem; margin-bottom:1.2rem; box-shadow: 0 6px 0 #1e293b; }
+    .poem-preview .poem-title { font-size:1.6rem; font-weight:850; text-align:center; margin-bottom:.35rem; color:#ff7b00; }
+    .poem-preview .poem-author { font-size:1.1rem; color:#475569; font-style:italic; text-align:center; margin-bottom:1.2rem; font-weight: 700; }
+    .pl { font-size:1.1rem; line-height:1.8; color:#1e293b; font-weight:700; }
+    .pl.chant-line { color:#e94560; }
+    .pl.ask-line { color:#4361ee; font-style:italic; }
+    .pl.ans-line { color:#2ec4b6; }
+
+    .review-actions { display:flex; gap:1rem; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; width:100%; }
+    .rv-btn {
+      font-family: "Fredoka", sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      padding: 0.85rem 2rem;
+      border: 3.5px solid #1e293b;
+      border-radius: 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      box-shadow: 0 6px 0 #1e293b;
+      transition: transform 0.1s, box-shadow 0.1s;
+      background: #fff;
+      color: #1e293b;
+    }
+    .rv-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #1e293b; filter: brightness(1.05); }
+    .rv-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e293b; }
+    .rv-btn.print-btn { background: #ff7b00; color: #fff; }
+    .rv-btn.back-btn { background: #4361ee; color: #fff; }
+
+    /* Read-aloud overlay */
+    .ra-overlay {
+      position:absolute; inset:0; z-index:160;
+      background: rgba(224, 242, 254, 0.98); display:flex; flex-direction:column;
+      align-items:center; justify-content:center; padding:1.5rem; color: #1e293b;
+      opacity:0; visibility:hidden; transition:opacity .4s,visibility .4s;
+    }
+    .ra-overlay.show { opacity:1; visibility:visible; }
+    .ra-line { font-size:2rem; line-height:1.7; text-align:center; max-width:820px; margin-bottom:1.2rem; font-weight: 800; }
+    .ra-line .ra-word { display:inline-block; color:rgba(30,41,59,0.25); transition:color .3s; margin:0 .12em; }
+    .ra-line .ra-word.spoken { color:#1e293b; }
+    .ra-line .ra-word.current { color:#4361ee; transform:scale(1.1); }
+
+    .ra-btn {
+      /* base style from shared.css */
+      background: #fff;
+      color: #1e293b;
+      font-size: 1rem;
+      padding: 0.65rem 1.6rem;
+    }
+    .ra-btn.ra-start { background:#ff7b00; color:#fff; }
+
+    /* Parrot speaking bar */
+    .pv-bar {
+      position:absolute; bottom:0; left:0; right:0; z-index:20;
+      padding:.6rem; background:#e0f2fe; border-top:3.5px solid #1e293b;
+      display:flex; align-items:center; justify-content:center;
+      gap:.45rem; opacity:0; transition:opacity .3s; pointer-events:none;
+    }
+    .pv-bar.on { opacity:1; }
+    .pv-bar .pv-txt { font-size:.95rem; font-weight:700; color:#0284c7; }
+    .pv-waves2 { display:flex; gap:2.5px; align-items:center; height:16px; }
+    .pv-waves2 span { width:3px; border-radius:2px; background:#0284c7; animation:wave-bar .7s ease-in-out infinite; }
+
+    /* Confetti */
+    .confetti-wrap { position:absolute; inset:0; pointer-events:none; z-index:100; overflow:hidden; }
+    .confetti-piece { position:absolute; width:10px; height:10px; border-radius:2px; animation:confetti-fall linear forwards; }
+    @keyframes confetti-fall { 0%{transform:translateY(-100%) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+
+    @media print {
+      @page { size:portrait; margin:0.8in; }
+      body,html { background:white!important; color:black!important; height:auto!important; overflow:visible!important; }
+      .bg,.orb,.motes,#rotate-msg,.app,.setup,.name-screen,#pvBar,#scale-root>.exit-btn { display:none!important; }
+      #scale-root { position:static!important; transform:none!important; width:100%!important; height:auto!important; overflow:visible!important; }
+      #appCard { position:static!important; background:transparent!important; border:none!important; box-shadow:none!important; backdrop-filter:none!important; overflow:visible!important; height:auto!important; }
+      .review-screen { opacity:1!important; visibility:visible!important; position:static!important; background:transparent!important; color:black!important; padding:0!important; overflow:visible!important; }
+      .review-screen h2, .review-actions { display:none!important; }
+      
+      .poem-preview {
+        background: transparent !important;
+        border: 5px double #2ec4b6 !important;
+        padding: 3.5rem 2.5rem !important;
+        margin: 1.5rem auto !important;
+        border-radius: 20px !important;
+        max-width: 650px !important;
+        color: #111 !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+        position: relative !important;
+        box-shadow: none !important;
+      }
+      .poem-preview::before {
+        content: "🦜 ✨ 🦜";
+        display: block;
+        font-size: 2.5rem !important;
+        margin-bottom: 1.8rem !important;
+        text-align: center !important;
+      }
+      .poem-preview::after {
+        content: "✨ Phonics Parrot Reading Award ✨";
+        display: block;
+        font-size: 1.1rem !important;
+        color: #666 !important;
+        margin-top: 3rem !important;
+        border-top: 2px dashed #2ec4b6 !important;
+        padding-top: 1.2rem !important;
+        text-align: center !important;
+        font-family: 'Outfit', 'Segoe UI', sans-serif !important;
+        letter-spacing: 0.08em !important;
+        font-weight: 700 !important;
+      }
+      .poem-preview .poem-title {
+        color: #ff7b00 !important;
+        font-size: 2.6rem !important;
+        font-family: 'Outfit', 'Segoe UI', Arial, sans-serif !important;
+        font-weight: 850 !important;
+        margin-bottom: 0.6rem !important;
+        text-align: center !important;
+      }
+      .poem-preview .poem-author {
+        color: #555 !important;
+        font-size: 1.25rem !important;
+        font-style: italic !important;
+        margin-bottom: 2.5rem !important;
+        text-align: center !important;
+      }
+      .poem-preview #poemBody {
+        margin-top: 2rem !important;
+      }
+      .poem-preview .stanza-block {
+        margin-bottom: 2rem !important;
+      }
+      .poem-preview .pl {
+        color: #222 !important;
+        font-size: 1.6rem !important;
+        font-family: 'Georgia', serif !important;
+        line-height: 1.8 !important;
+        text-align: center !important;
+        margin-bottom: 0.9rem !important;
+      }
+      .poem-preview .pl.chant-line { color: #d62828 !important; font-weight: bold !important; }
+      .poem-preview .pl.ask-line { color: #003049 !important; font-style: italic !important; }
+      .poem-preview .pl.ans-line { color: #2a9d8f !important; font-weight: bold !important; }
+    }
+
+    @media (max-width:768px) {
+      .app { padding:.5rem; grid-template-rows:auto auto 1fr auto auto; }
+      .head h1 { font-size:1rem; }
+      .stanza-card { padding:.5rem; }
+      .poem-line { padding:.4rem; gap:.4rem; flex-wrap:wrap; }
+      .line-template { font-size:1rem; width:100%; order:3; }
+      .line-type { font-size:.6rem; padding:.2rem .4rem; }
+      .rec-btn { width:36px; height:36px; font-size:1rem; }
+      .play-btn { width:36px; height:36px; font-size:1rem; }
+      .line-template .blank { min-width:80px; font-size:1rem; }
+      .bottom-bar { flex-direction:column; gap:.5rem; }
+      .stanza-nav { width:100%; justify-content:space-between; }
+      .nav-btn { padding:.5rem 1rem; font-size:.8rem; flex:1; justify-content:center; }
+      .decor-wing { display: none; }
+    }
+
+    /* ── v7: Classroom Mode (projector-optimised large text) ── */
+    body.classroom-mode .line-template {
+      font-size: clamp(2.8rem, 5vw, 5rem) !important;
+      line-height: 1.5 !important;
+    }
+    body.classroom-mode .line-template .blank,
+    body.classroom-mode .line-template .blank.filled {
+      font-size: clamp(2.8rem, 5vw, 5rem) !important;
+      min-width: 180px !important;
+    }
+    body.classroom-mode .line-template .tpl-word {
+      font-size: inherit !important;
+    }
+    body.classroom-mode .stanza-card {
+      padding: 1.5rem 2rem !important;
+      overflow: hidden !important;
+    }
+    body.classroom-mode .poem-line {
+      padding: 1.2rem 1.5rem !important;
+      margin-bottom: 0.8rem !important;
+    }
+    body.classroom-mode .rec-btn {
+      width: 64px !important; height: 64px !important; font-size: 1.8rem !important;
+    }
+    body.classroom-mode .play-btn {
+      width: 64px !important; height: 64px !important; font-size: 1.8rem !important;
+    }
+    body.classroom-mode .nav-btn {
+      padding: 1rem 2rem !important; font-size: 1.2rem !important;
+    }
+    body.classroom-mode .head h1 {
+      font-size: 2.2rem !important;
+    }
+  </style>
+</head>
+<body>
+
+<div id="rotate-msg">
+  <div class="rotate-icon">📱</div>
+  <div class="rotate-title">Rotate Your Device</div>
+  <div class="rotate-sub">Phonics Parrot works best in landscape mode.</div>
+</div>
+
+<canvas id="bg-shader-canvas" class="bg-shader"></canvas>
+<div class="bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<div class="motes" id="motes"></div>
+
+<div id="scale-root">
+  <button id="exitBtn" class="exit-btn" title="Exit / Dismiss">✕</button>
+
+  <div class="card" id="appCard">
+    <!-- Decorative swinging plants on sides -->
+    <div class="decor-wing decor-left">
+      <img src="../assets/img/plant_decor.svg" alt="Decor" class="decor-img">
+    </div>
+    <div class="decor-wing decor-right">
+      <img src="../assets/img/plant_decor.svg" alt="Decor" class="decor-img" style="transform: scaleX(-1);">
+    </div>
+
+    <!-- Setup -->
+    <div class="setup" id="setup">
+      <img src="../assets/img/poster.svg" class="mascot-img-setup" style="height:120px;width:auto;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 4px 0 #1e293b);" alt="Logo">
+      <h1>Phonics Parrot</h1>
+      <p class="sub">The parrot will listen as you build and read your poem, giving real-time pronunciation feedback.</p>
+      <button class="enable-btn" id="enableBtn">🎤&ensp;Start Listening</button>
+      <p class="err" id="setupErr">Microphone was blocked. Check your browser settings.</p>
+    </div>
+
+    <!-- Name entry -->
+    <div class="name-screen" id="nameScreen">
+      <img src="../assets/img/poster.svg" class="mascot-img-name" style="height:120px;width:auto;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 4px 0 #1e293b);" alt="Logo">
+      <h2>What's your name?</h2>
+      <p>Type your name and let's write your very own<br><strong id="nameScreenPrompt">Free Time Poem!</strong></p>
+      <input class="name-input" id="nameInput" placeholder="Your name here…" maxlength="30" autocomplete="off">
+      <button class="name-go" id="nameGo">Let's Go! 🚀</button>
+    </div>
+
+    <!-- Main app -->
+    <div class="app" id="mainApp" style="position:relative;">
+      <div class="head" id="mainHead" style="position:relative;">
+        <h1>
+          <img src="../assets/img/poster.svg" class="mascot-head-img" id="pIcon" style="height:48px;width:auto;object-fit:contain;margin-right:8px;vertical-align:middle;filter:drop-shadow(0 2px 0 rgba(30,41,59,0.15));" alt="Logo">
+          <span id="activityTitle">My Free Time Poem</span>
+          <span class="dot" id="dot"></span>
+        </h1>
+        <div class="student-name-tag" id="nameTag"></div>
+        <div id="parrotSpeechBubble" style="display:none;position:absolute;top:105%;left:50%;transform:translateX(-50%);background:#2ec4b6;color:#0c0f1d;padding:0.6rem 1.2rem;border-radius:1rem;font-size:0.85rem;font-weight:800;z-index:100;box-shadow:0 4px 18px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.25);width:90%;max-width:350px;text-align:center;"></div>
+      </div>
+
+      <div class="progress-section">
+        <div class="stanza-dots" id="stanzaDots"></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="stanza-counter" id="stanzaCounter">Stanza 1</div>
+      </div>
+
+      <div class="stanza-card" id="stanzaCard"></div>
+
+      <div class="mic-status" id="micStatus">
+        <span>🎙️</span> Tap 🔴 to record the full line
+      </div>
+
+      <div class="bottom-bar">
+        <div class="shortcuts">
+          <div class="shortcut-tag"><kbd>←</kbd><kbd>→</kbd> Navigate</div>
+          <div class="shortcut-tag"><kbd>R</kbd> Record next</div>
+          <div class="shortcut-tag"><kbd>Space</kbd> Play line</div>
+        </div>
+        <div class="stanza-nav">
+          <button class="nav-btn" id="prevBtn" disabled>← Back</button>
+          <button class="nav-btn primary" id="nextBtn">Next Stanza →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review screen -->
+    <div class="review-screen" id="reviewScreen">
+      <h2><span>🎉</span> <span class="gradient-text" id="readyTitle">Your Poem is Ready!</span></h2>
+      <div class="poem-preview" id="poemPreview">
+        <div class="poem-title" id="previewTitle">My Free Time Poem</div>
+        <div class="poem-author" id="previewAuthor"></div>
+        <div id="poemBody"></div>
+      </div>
+      <div class="review-actions">
+        <button class="rv-btn back-btn" id="backToEdit">✏️ Edit More</button>
+        <button class="rv-btn print-btn" id="printBtn" aria-label="Print your completed poem">🖨️ Print My Poem</button>
+        <button class="rv-btn" id="copyBtn" aria-label="Copy poem text to clipboard" style="margin-top:.5rem">📋 Copy Text</button>
+      </div>
+    </div>
+
+    <!-- Parrot speaking bar -->
+    <div class="pv-bar" id="pvBar">
+      <img src="../assets/img/poster.svg" style="height:36px;width:auto;object-fit:contain;vertical-align:middle;margin-right:6px;" alt="Logo">
+      <div class="pv-waves2"><span></span><span></span><span></span><span></span><span></span></div>
+      <span class="pv-txt">Parrot is speaking…</span>
+    </div>
+
+  </div>
+</div>
+
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/audio.js"></script>
+<script src="../assets/js/stt.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script>
+"use strict";
+
+new PhonicsLayout(1280, 720);
+
+var lessonTitle = localStorage.getItem("PP_LESSON_TITLE") || "My Free Time";
+var contentType = localStorage.getItem("PP_CONTENT_TYPE") || "poem";
+var displayTitle = lessonTitle;
+var typeLower = contentType.toLowerCase();
+var titleLower = lessonTitle.toLowerCase();
+if (titleLower.indexOf(typeLower) === -1) {
+  displayTitle += " " + contentType.charAt(0).toUpperCase() + contentType.slice(1);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var elTitle = document.getElementById("activityTitle");
+  if (elTitle) elTitle.textContent = displayTitle;
+  
+  var elPrompt = document.getElementById("nameScreenPrompt");
+  if (elPrompt) elPrompt.textContent = displayTitle + "!";
+  
+  var elReady = document.getElementById("readyTitle");
+  if (elReady) elReady.textContent = "Your " + contentType.charAt(0).toUpperCase() + contentType.slice(1) + " is Ready!";
+  
+  var elPrintBtn = document.getElementById("printBtn");
+  if (elPrintBtn) {
+    elPrintBtn.innerHTML = "🖨️ Print My " + contentType.charAt(0).toUpperCase() + contentType.slice(1);
+    elPrintBtn.ariaLabel = "Print your completed " + contentType;
+  }
+});
+
+/* ── Build stanzas from CUSTOM_POEM ──────────────────────────── */
+var STANZAS = [];
+var answers = [];
+
+(function buildStanzas() {
+  var raw = localStorage.getItem("CUSTOM_POEM");
+  if (!raw) return;
+  try {
+    var poem = JSON.parse(raw);
+    for (var i = 0; i < poem.length; i++) {
+      var line = poem[i];
+      var words = line.text.split(/\s+/);
+      var tpl = [];
+      var current = "";
+      var blankNum = 0;
+
+      for (var wi = 0; wi < words.length; wi++) {
+        var w = words[wi];
+        var clean = w.toLowerCase().replace(/[^\w]/g, "");
+        if (line.targets[clean]) {
+          if (current) { tpl.push(current); }
+          blankNum++;
+          tpl.push(blankNum === 1 ? "[BLANK]" : "[BLANK" + blankNum + "]");
+          current = "";
+        } else {
+          current += (current ? " " : "") + w;
+        }
+      }
+      if (current) tpl.push(current);
+
+      var hintWords = Object.keys(line.targets).join(" and ");
+      var theme = Object.values(line.targets)[0] || "Custom Line";
+
+      STANZAS.push({ theme: theme, read: { tpl: tpl, hint: "Say '" + hintWords + "'" } });
+      answers.push({ read: { blank1:"", blank2:"", blank3:"", blank4:"", blank5:"", pronScore:null, pronDetails:null } });
+    }
+  } catch(e) {}
+})();
+
+if (STANZAS.length === 0) {
+  // Show error when DOM is ready (avoids window.onload conflict)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showEmptyLessonError);
+  } else {
+    showEmptyLessonError();
+  }
+} else {
+
+/* ── State ────────────────────────────────────────────────────── */
+var studentName = "";
+var currentStanza = 0;
+var activeLineRec = null;
+var speaking = false;
+
+/* ── Helpers ──────────────────────────────────────────────────── */
+function isLineComplete(lineDef, lineAns) {
+  for (var i = 0; i < lineDef.tpl.length; i++) {
+    var seg = lineDef.tpl[i];
+    if (seg === "[BLANK]") {
+      if (!lineAns.blank1) return false;
+    } else if (seg.indexOf("[BLANK") === 0) {
+      var num = parseInt(seg.replace(/[^\d]/g, ""));
+      if (!lineAns["blank" + num]) return false;
+    }
+  }
+  return true;
+}
+
+function isStanzaComplete(idx) {
+  var s = STANZAS[idx];
+  var keys = Object.keys(s).filter(function(k){ return k !== "theme"; });
+  for (var ki = 0; ki < keys.length; ki++) {
+    if (!isLineComplete(s[keys[ki]], answers[idx][keys[ki]])) return false;
+  }
+  return true;
+}
+
+function buildFullLine(tpl, lineAns) {
+  var parts = [];
+  for (var i = 0; i < tpl.length; i++) {
+    var seg = tpl[i];
+    var val = "";
+    if (seg === "[BLANK]") { val = lineAns.blank1 || "…"; }
+    else if (seg.indexOf("[BLANK") === 0) {
+      var num = parseInt(seg.replace(/[^\d]/g, ""));
+      val = lineAns["blank" + num] || "…";
+    } else { val = seg; }
+    
+    var trimmed = val.trim();
+    if (trimmed) parts.push(trimmed);
+  }
+  return parts.join(" ");
+}
+
+function showNameOrStartApp() {
+  var sessionName = sessionStorage.getItem("PP_STUDENT_NAME") || "";
+  if (sessionName && sessionName !== "guest") {
+    studentName = sessionName;
+    document.getElementById("nameTag").innerHTML = "👤 <strong>" + studentName + "</strong>'s " + contentType;
+    document.getElementById("nameScreen").classList.add("gone");
+    buildDots();
+    renderStanza(0);
+  } else {
+    document.getElementById("nameScreen").classList.add("show");
+    document.getElementById("nameInput").focus();
+  }
+}
+
+/* ── Mic setup ────────────────────────────────────────────────── */
+document.getElementById("enableBtn").onclick = async function() {
+  await requestMicPermission(
+    function() {
+      document.getElementById("dot").classList.add("ok");
+      document.getElementById("setup").classList.add("gone");
+      PhonicsAudio.playStart();
+      setTimeout(showNameOrStartApp, 500);
+    },
+    function() { document.getElementById("setupErr").classList.add("show"); }
+  );
+};
+
+(async function() {
+  if (await checkMicPermission()) {
+    document.getElementById("dot").classList.add("ok");
+    document.getElementById("setup").classList.add("gone");
+    PhonicsAudio.playStart();
+    setTimeout(showNameOrStartApp, 500);
+  }
+})();
+
+document.getElementById("exitBtn").onclick = function() {
+  var setup = document.getElementById("setup");
+  if (!setup.classList.contains("gone")) {
+    setup.classList.add("gone");
+    document.getElementById("setupErr").textContent = "Mic Disabled — Preview Mode";
+    document.getElementById("setupErr").classList.add("show");
+    setTimeout(function() {
+      document.getElementById("nameScreen").classList.add("show");
+      document.getElementById("nameInput").focus();
+    }, 500);
+  } else {
+    window.location.href = "../index.html";
+  }
+};
+
+/* ── Name entry ───────────────────────────────────────────────── */
+document.getElementById("nameGo").onclick = startApp;
+document.getElementById("nameInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") startApp();
+});
+
+function startApp() {
+  var val = document.getElementById("nameInput").value.trim();
+  if (!val) return;
+  studentName = val;
+  sessionStorage.setItem("PP_STUDENT_NAME", studentName);
+  document.getElementById("nameTag").innerHTML = "👤 <strong>" + studentName + "</strong>'s " + contentType;
+  document.getElementById("nameScreen").classList.add("gone");
+  buildDots();
+  renderStanza(0);
+  ttsSpeak("Hello " + studentName + "! Let's write your " + contentType + " together!");
+}
+
+function buildDots() {
+  var c = document.getElementById("stanzaDots");
+  c.innerHTML = "";
+  for (var i = 0; i < STANZAS.length; i++) {
+    (function(idx) {
+      var d = document.createElement("button");
+      d.className = "stanza-dot";
+      d.onclick = function(){ renderStanza(idx); };
+      c.appendChild(d);
+    })(i);
+  }
+}
+
+function updateDots() {
+  var dots = document.querySelectorAll(".stanza-dot");
+  for (var i = 0; i < dots.length; i++) {
+    dots[i].classList.toggle("active", i === currentStanza);
+    dots[i].classList.toggle("complete", isStanzaComplete(i) && i !== currentStanza);
+  }
+}
+
+/* ── Speech matching ──────────────────────────────────────────── */
+function matchSpoken(tpl, spokenText) {
+  var spokenWords = spokenText.toLowerCase().replace(/[^\w\s']/g, " ").trim().split(/\s+/).filter(function(w){ return w; });
+  var result = { blank1:"", blank2:"", wordResults:[], matchScore:0 };
+
+  // Flatten template
+  var flatParts = [];
+  for (var ti = 0; ti < tpl.length; ti++) {
+    var seg = tpl[ti];
+    if (seg === "[BLANK]") { flatParts.push({type:"blank",num:1}); }
+    else if (seg.indexOf("[BLANK") === 0) {
+      flatParts.push({type:"blank",num:parseInt(seg.replace(/[^\d]/g,""))});
+    } else {
+      var segWords = seg.replace(/[^\w\s']/g," ").trim().split(/\s+/).filter(function(w){return w;});
+      for (var swi = 0; swi < segWords.length; swi++) {
+        flatParts.push({type:"word",text:segWords[swi].toLowerCase()});
+      }
+    }
+  }
+
+  // Match template words to spoken words
+  var templateWords = flatParts.filter(function(p){ return p.type === "word"; });
+  var spokenPointers = [];
+  var searchFrom = 0;
+
+  for (var twi = 0; twi < templateWords.length; twi++) {
+    var target = templateWords[twi].text;
+    var bestIdx = -1, bestDist = Infinity;
+    for (var wi = searchFrom; wi < Math.min(spokenWords.length, searchFrom + 6); wi++) {
+      var d = levenshtein(target, spokenWords[wi]);
+      var threshold = Math.max(1, Math.floor(target.length / 3));
+      if (d <= threshold && d < bestDist) { bestDist = d; bestIdx = wi; }
+    }
+    spokenPointers.push(bestIdx);
+    if (bestIdx !== -1) searchFrom = bestIdx + 1;
+  }
+
+  var tplWordIdx = 0, lastSpokenIdx = -1;
+  for (var pi = 0; pi < flatParts.length; pi++) {
+    var part = flatParts[pi];
+    if (part.type === "word") {
+      var spIdx = spokenPointers[tplWordIdx];
+      if (spIdx !== -1) {
+        var spoken = spokenWords[spIdx];
+        var dist = levenshtein(part.text, spoken);
+        var threshold2 = Math.max(1, Math.floor(part.text.length / 3));
+        var matched = dist <= threshold2;
+        result.wordResults.push({ word:part.text, matched:matched, spokenAs:spoken });
+        if (matched) result.matchScore++;
+        lastSpokenIdx = spIdx;
+      } else {
+        result.wordResults.push({ word:part.text, matched:false, spokenAs:"" });
+      }
+      tplWordIdx++;
+    } else if (part.type === "blank") {
+      // Collect words between last template match and next template match
+      var nextStart = spokenWords.length;
+      for (var ni = pi + 1; ni < flatParts.length; ni++) {
+        if (flatParts[ni].type === "word") {
+          var wordCountBefore = 0;
+          for (var k = 0; k < ni; k++) { if (flatParts[k].type === "word") wordCountBefore++; }
+          var sp = spokenPointers[wordCountBefore];
+          if (sp !== -1) nextStart = sp;
+          break;
+        }
+      }
+      
+      // Count consecutive blanks starting from this one
+      var consecutiveBlanks = 0;
+      for (var ci = pi; ci < flatParts.length; ci++) {
+        if (flatParts[ci].type === "blank") consecutiveBlanks++;
+        else break;
+      }
+      
+      var blankWords = [];
+      for (var bwi = lastSpokenIdx + 1; bwi < nextStart; bwi++) blankWords.push(spokenWords[bwi]);
+      
+      if (consecutiveBlanks > 1) {
+        var val = blankWords[0] || "";
+        result["blank" + part.num] = val;
+        if (val) lastSpokenIdx = lastSpokenIdx + 1;
+      } else {
+        var val = blankWords.join(" ").trim();
+        result["blank" + part.num] = val;
+        lastSpokenIdx = nextStart - 1;
+      }
+    }
+  }
+
+  var totalTemplate = result.wordResults.length;
+  result.pronScore = totalTemplate > 0 ? Math.round((result.matchScore / totalTemplate) * 100) : 100;
+  return result;
+}
+
+/* ── STT ──────────────────────────────────────────────────────── */
+var stt = new PhonicsSTT({
+  onInterim: function(text) {
+    var liveEl = document.getElementById("liveTranscript");
+    if (liveEl) { liveEl.textContent = '"' + text + '"'; liveEl.classList.add("active"); }
+  },
+  onFinal: function(text) {
+    var liveEl = document.getElementById("liveTranscript");
+    if (liveEl) { liveEl.textContent = '"' + text + '"'; liveEl.classList.remove("active"); }
+    if (activeLineRec) {
+      processRecording(activeLineRec, text);
+      activeLineRec = null;
+      setMicStatus("idle", "Tap 🔴 to record the full line");
+      var lines = document.querySelectorAll(".poem-line");
+      for (var i=0;i<lines.length;i++) lines[i].classList.remove("recording-line");
+      var blanks = document.querySelectorAll(".blank");
+      for (var j=0;j<blanks.length;j++) blanks[j].classList.remove("recording");
+      // Also reset any active rec-btn state
+      var recBtns = document.querySelectorAll(".rec-btn.active");
+      for (var k=0;k<recBtns.length;k++) recBtns[k].classList.remove("active");
+    }
+  },
+  onStatus: function() {},
+  onError: function(err) {
+    console.error("STT Error details:", err);
+    // Recording failed — reset UI state cleanly
+    activeLineRec = null;
+    setMicStatus("idle", "Mic error — tap 🔴 to try again");
+    var lines = document.querySelectorAll(".poem-line");
+    for (var i=0;i<lines.length;i++) lines[i].classList.remove("recording-line");
+    var blanks = document.querySelectorAll(".blank");
+    for (var j=0;j<blanks.length;j++) blanks[j].classList.remove("recording");
+    var recBtns = document.querySelectorAll(".rec-btn.active");
+    for (var k=0;k<recBtns.length;k++) recBtns[k].classList.remove("active");
+    if (err && err.message) {
+      alert("Speech Error: " + err.message);
+    }
+  },
+});
+
+function startLineRecording(stanzaIdx, lineKey) {
+  if (speaking) return;
+  stopAllRecording();
+  activeLineRec = { stanzaIdx:stanzaIdx, lineKey:lineKey };
+  setMicStatus("recording", "🎤 Listening… read the whole line!");
+  var row = document.querySelector('.poem-line[data-linekey="' + lineKey + '"]');
+  if (row) row.classList.add("recording-line");
+  if (row) {
+    var blanks = row.querySelectorAll(".blank");
+    for (var bi=0;bi<blanks.length;bi++) blanks[bi].classList.add("recording");
+  }
+  var s = STANZAS[stanzaIdx];
+  var lineDef = s[lineKey];
+  var lineText = lineDef.tpl.join(" ").replace(/\[BLANK\d*\]/g, "___");
+  stt.start(lineText);
+}
+
+function processRecording(target, spokenText) {
+  var s = STANZAS[target.stanzaIdx];
+  var lineDef = s[target.lineKey];
+  var lineAns = answers[target.stanzaIdx][target.lineKey];
+  var match = matchSpoken(lineDef.tpl, spokenText);
+  for (var i = 1; i <= 5; i++) {
+    if (match["blank" + i]) lineAns["blank" + i] = match["blank" + i];
+  }
+  lineAns.pronScore = match.pronScore;
+  lineAns.pronDetails = match.wordResults;
+  
+  if (match.pronScore >= 50) {
+    PhonicsAudio.playSuccess();
+  }
+
+  renderStanza(target.stanzaIdx);
+
+  // Log performance data
+  var rawWords = lineDef.tpl.join(" ");
+  logPerformance({
+    activity: "speak",
+    target: rawWords.replace(/\[BLANK\d*\]/g, "___"),
+    phoneme: s.theme || "Custom Line",
+    spoken: spokenText,
+    score: match.pronScore,
+    verdict: match.pronScore >= 50 ? "correct" : "incorrect"
+  });
+
+  var fullLineText = buildFullLine(lineDef.tpl, lineAns);
+  ttsSpeak(fullLineText);
+}
+
+function stopAllRecording() { activeLineRec = null; stt.stop(); }
+
+/* ── TTS ──────────────────────────────────────────────────────── */
+function ttsSpeak(text, cb) {
+  if (!window.speechSynthesis) return;
+  safeSpeak(text, {
+    voice: getBestVoice(),
+    onstart: function() { speaking = true; setPvBar(true); setPIcon(true); },
+    onend: function() { speaking = false; setPvBar(false); setPIcon(false); if (cb) cb(); },
+    onerror: function() { speaking = false; setPvBar(false); setPIcon(false); },
+  });
+}
+
+function triggerParrotAI(spokenText, cb) {
+  var apiKey = localStorage.getItem("PP_GEMINI_API_KEY");
+  if (!apiKey) { if (cb) cb(); return; }
+
+  showParrotBubble("Squawk! Let me think...");
+
+  var prompt = "You are Phonics Parrot, a friendly, encouraging classroom assistant. " +
+               "The student just successfully spoke this phrase: \"" + spokenText + "\". " +
+               "Say something encouraging and relevant back to the student in exactly 1 short sentence (under 12 words). " +
+               "Include occasional funny parrot sounds like 'Squawk!' or 'Polly wants a cookie!'. " +
+               "Do not use markdown bold, asterisks, or formatting symbols.";
+
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=" + apiKey;
+  
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }]
+    })
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error("API error: " + res.status);
+    return res.json();
+  })
+  .then(function(data) {
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+      var reply = data.candidates[0].content.parts[0].text.trim();
+      showParrotBubble(reply);
+      ttsSpeak(reply, cb);
+    } else {
+      throw new Error("Invalid API response structure");
+    }
+  })
+  .catch(function(err) {
+    console.error("Gemini API error:", err);
+    showParrotBubble("Squawk! Error: " + err.message + ". Check your connection and API Key.");
+    if (cb) cb();
+  });
+}
+
+function showParrotBubble(text) {
+  var el = document.getElementById("parrotSpeechBubble");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+  setTimeout(function() { el.style.display = "none"; }, 6000);
+}
+
+function setPvBar(on) { document.getElementById("pvBar").classList.toggle("on", on); }
+function setPIcon(on) { document.getElementById("pIcon").classList.toggle("talking", on); }
+
+function setMicStatus(state, msg) {
+  var el = document.getElementById("micStatus");
+  el.className = "mic-status";
+  if (state === "recording") {
+    el.classList.add("recording");
+    el.innerHTML = '<div class="mic-waves"><span></span><span></span><span></span><span></span></div><span>' + msg + '</span>';
+  } else {
+    el.innerHTML = '<span>🎙️</span><span>' + msg + '</span>';
+  }
+}
+
+/* ── Render stanza ────────────────────────────────────────────── */
+function renderStanza(idx) {
+  currentStanza = idx;
+
+  // Save progress
+  try {
+    localStorage.setItem("PP_POEM_PROGRESS", JSON.stringify({
+      studentName: studentName, currentStanza: currentStanza,
+      answers: answers, savedAt: Date.now(),
+    }));
+  } catch(e) {}
+
+  var s = STANZAS[idx];
+  var filledLines = 0, totalLines = 0;
+
+  for (var si = 0; si < STANZAS.length; si++) {
+    var keys = Object.keys(STANZAS[si]).filter(function(k){ return k !== "theme"; });
+    for (var ki = 0; ki < keys.length; ki++) {
+      totalLines++;
+      if (isLineComplete(STANZAS[si][keys[ki]], answers[si][keys[ki]])) filledLines++;
+    }
+  }
+
+  document.getElementById("progressFill").style.width = Math.round((filledLines / totalLines) * 100) + "%";
+  document.getElementById("stanzaCounter").textContent = "Stanza " + (idx + 1) + " of " + STANZAS.length;
+  updateDots();
+
+  var card = document.getElementById("stanzaCard");
+  card.innerHTML = '<div class="stanza-label"><span class="sl-num">' + (idx+1) + '</span>' + s.theme + '</div>' +
+    '<div class="stanza-lines" id="stanzaLines"></div><div class="live-transcript" id="liveTranscript"></div>';
+
+  var linesEl = card.querySelector("#stanzaLines");
+  var lineKeys = Object.keys(s).filter(function(k){ return k !== "theme"; });
+
+  for (var lki = 0; lki < lineKeys.length; lki++) {
+    (function() {
+      var key = lineKeys[lki];
+      var lineDef = s[key];
+      var lineAns = answers[idx][key];
+      var complete = isLineComplete(lineDef, lineAns);
+
+      var lineHtml = "";
+      for (var ti = 0; ti < lineDef.tpl.length; ti++) {
+        var seg = lineDef.tpl[ti];
+        if (seg.indexOf("[BLANK") === 0) {
+          var num = seg === "[BLANK]" ? 1 : parseInt(seg.replace(/[^\d]/g, ""));
+          var val = lineAns["blank" + num] || "";
+          lineHtml += '<span class="blank' + (val ? " filled" : "") + '" data-blank="' + num + '">' + (val || "&nbsp;") + '</span>';
+        } else {
+          var segParts = seg.split(/(\s+)/);
+          for (var spi = 0; spi < segParts.length; spi++) {
+            lineHtml += '<span class="tpl-word verified">' + segParts[spi] + '</span>';
+          }
+        }
+      }
+
+      var row = document.createElement("div");
+      row.className = "poem-line" + (complete ? " line-complete" : "");
+      row.dataset.linekey = key;
+      var apiKey = localStorage.getItem("PP_GEMINI_API_KEY");
+      row.innerHTML = '<span class="line-type lt-' + key + '">' + key + '</span>' +
+        '<div class="line-template">' + lineHtml + '</div>' +
+        '<button class="rec-btn' + (complete ? " done" : "") + '" data-linekey="' + key + '">' + (complete ? "✓" : "🔴") + '</button>' +
+        (complete ? '<button class="play-btn" data-line="' + buildFullLine(lineDef.tpl, lineAns).replace(/"/g, "&quot;") + '">▶</button>' : "") +
+        (complete && apiKey ? '<button class="ai-btn" title="Ask Parrot AI" data-line="' + buildFullLine(lineDef.tpl, lineAns).replace(/"/g, "&quot;") + '">✨</button>' : "");
+
+      linesEl.appendChild(row);
+    })();
+  }
+
+  // Wire buttons
+  var recBtns = card.querySelectorAll(".rec-btn");
+  for (var rbi = 0; rbi < recBtns.length; rbi++) {
+    recBtns[rbi].onclick = (function(ik, lk) {
+      return function() {
+        startLineRecording(ik, lk);
+        this.classList.add("active");
+      };
+    })(idx, recBtns[rbi].dataset.linekey);
+  }
+
+  var playBtns = card.querySelectorAll(".play-btn");
+  for (var pbi = 0; pbi < playBtns.length; pbi++) {
+    playBtns[pbi].onclick = (function(line) {
+      return function() { ttsSpeak(line); };
+    })(playBtns[pbi].dataset.line);
+  }
+
+  var aiBtns = card.querySelectorAll(".ai-btn");
+  for (var aii = 0; aii < aiBtns.length; aii++) {
+    aiBtns[aii].onclick = (function(btn) {
+      return function() {
+        var lineText = btn.dataset.line;
+        btn.classList.add("thinking");
+        btn.innerHTML = "⚙️";
+        btn.disabled = true;
+        triggerParrotAI(lineText, function() {
+          btn.classList.remove("thinking");
+          btn.innerHTML = "✨";
+          btn.disabled = false;
+        });
+      };
+    })(aiBtns[aii]);
+  }
+
+  document.getElementById("prevBtn").disabled = idx === 0;
+  document.getElementById("nextBtn").textContent = (idx === STANZAS.length - 1) ? "🎉 Finish My Poem!" : "Next Stanza →";
+}
+
+/* ── Navigation ───────────────────────────────────────────────── */
+document.getElementById("nextBtn").onclick = function() {
+  if (currentStanza === STANZAS.length - 1) showReview();
+  else renderStanza(currentStanza + 1);
+};
+document.getElementById("prevBtn").onclick = function() {
+  if (currentStanza > 0) renderStanza(currentStanza - 1);
+};
+
+/* ── Review screen ────────────────────────────────────────────── */
+function showReview() {
+  localStorage.removeItem("PP_POEM_PROGRESS");
+  var lines = [];
+  for (var i = 0; i < STANZAS.length; i++) {
+    var s = STANZAS[i];
+    var html = "";
+    var keys = Object.keys(s).filter(function(k){ return k !== "theme"; });
+    for (var ki = 0; ki < keys.length; ki++) {
+      html += '<div class="pl chant-line">' + buildFullLine(s[keys[ki]].tpl, answers[i][keys[ki]]) + '</div>';
+    }
+    lines.push(html);
+  }
+
+  document.getElementById("previewTitle").textContent = studentName + "'s " + displayTitle;
+  document.getElementById("previewAuthor").textContent = "by " + studentName;
+  document.getElementById("poemBody").innerHTML = lines.map(function(l){ return '<div class="stanza-block">' + l + '</div>'; }).join("");
+  document.getElementById("reviewScreen").classList.add("show");
+  launchConfetti();
+}
+
+function launchConfetti() {
+  var wrap = document.createElement("div");
+  wrap.className = "confetti-wrap";
+  document.getElementById("appCard").appendChild(wrap);
+  var colors = ["#e94560","#4361ee","#2ec4b6","#ff7b00"];
+  for (var i = 0; i < 50; i++) {
+    var c = document.createElement("div");
+    c.className = "confetti-piece";
+    c.style.left = Math.random() * 100 + "%";
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (Math.random() * 2 + 1) + "s";
+    wrap.appendChild(c);
+  }
+  setTimeout(function(){ wrap.remove(); }, 4000);
+}
+
+/* ── Review actions ───────────────────────────────────────────── */
+document.getElementById("printBtn").onclick = function() { window.print(); };
+document.getElementById("copyBtn").onclick = function() {
+  var text = document.getElementById("poemBody").innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById("copyBtn");
+    var orig = btn.innerHTML;
+    btn.innerHTML = "✅ Copied!";
+    setTimeout(function(){ btn.innerHTML = orig; }, 2000);
+  }).catch(function(){ alert("Could not copy. Please select and copy manually."); });
+};
+document.getElementById("backToEdit").onclick = function() {
+  document.getElementById("reviewScreen").classList.remove("show");
+};
+
+/* ── Resume progress ──────────────────────────────────────────── */
+(function checkResume() {
+  try {
+    var saved = JSON.parse(localStorage.getItem("PP_POEM_PROGRESS"));
+    if (saved && saved.answers && saved.answers.length > 0) {
+      var hasProgress = false;
+      for (var ai = 0; ai < saved.answers.length; ai++) {
+        var a = saved.answers[ai];
+        var vals = Object.values(a);
+        for (var vi = 0; vi < vals.length; vi++) {
+          if (vals[vi] && typeof vals[vi] === "object") {
+            var subVals = Object.values(vals[vi]);
+            for (var svi = 0; svi < subVals.length; svi++) {
+              if (subVals[svi]) { hasProgress = true; break; }
+            }
+          }
+          if (hasProgress) break;
+        }
+        if (hasProgress) break;
+      }
+      if (hasProgress && confirm("Resume \"" + (saved.studentName || "your") + "\" " + contentType + "?\n\nYou were on stanza " + ((saved.currentStanza || 0) + 1) + " of " + STANZAS.length + ".\n\nClick OK to continue, or Cancel to start fresh.")) {
+        studentName = saved.studentName || "";
+        sessionStorage.setItem("PP_STUDENT_NAME", studentName);
+        currentStanza = saved.currentStanza || 0;
+        answers = saved.answers;
+        document.getElementById("nameTag").innerHTML = "👤 <strong>" + studentName + "</strong>'s " + contentType;
+        document.getElementById("nameScreen").classList.add("gone");
+        buildDots();
+        renderStanza(currentStanza);
+        return;
+      }
+    }
+  } catch(e) {}
+  localStorage.removeItem("PP_POEM_PROGRESS");
+})();
+
+/* ── Keyboard shortcuts ───────────────────────────────────────── */
+document.addEventListener("keydown", function(e) {
+  if (e.code === "Escape") {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    speaking = false;
+    setPvBar(false);
+    setPIcon(false);
+    stt.stop();
+    stopAllRecording();
+    setMicStatus("idle", "Tap 🔴 to record the full line");
+  }
+
+  var nameScreen = document.getElementById("nameScreen");
+  var reviewScreen = document.getElementById("reviewScreen");
+  if (!nameScreen.classList.contains("gone") || reviewScreen.classList.contains("show")) return;
+
+  if (e.code === "ArrowRight") {
+    document.getElementById("nextBtn") && !document.getElementById("nextBtn").disabled && document.getElementById("nextBtn").click();
+  } else if (e.code === "ArrowLeft") {
+    document.getElementById("prevBtn") && !document.getElementById("prevBtn").disabled && document.getElementById("prevBtn").click();
+  } else if (e.code === "KeyR") {
+    var card = document.getElementById("stanzaCard");
+    if (card) {
+      var recBtns = card.querySelectorAll(".rec-btn:not(.done)");
+      if (recBtns.length > 0) recBtns[0].click();
+    }
+  } else if (e.code === "Space") {
+    e.preventDefault();
+    var card = document.getElementById("stanzaCard");
+    if (card) {
+      var playBtns = card.querySelectorAll(".play-btn");
+      if (playBtns.length > 0) playBtns[0].click();
+    }
+  }
+});
+
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🦜 Phonics Parrot — Teacher Setup Guide</title>
+  <style>
+    @font-face {
+      font-family: 'JetBrains Mono';
+      font-style: normal;
+      font-weight: 400;
+      src: url('assets/fonts/JetBrainsMono-400.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      font-style: normal;
+      font-weight: 500;
+      src: url('assets/fonts/JetBrainsMono-500.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 300;
+      src: url('assets/fonts/Outfit-300.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 400;
+      src: url('assets/fonts/Outfit-400.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 500;
+      src: url('assets/fonts/Outfit-500.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 600;
+      src: url('assets/fonts/Outfit-600.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 700;
+      src: url('assets/fonts/Outfit-700.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Outfit';
+      font-style: normal;
+      font-weight: 800;
+      src: url('assets/fonts/Outfit-800.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 300;
+      src: url('assets/fonts/PlusJakartaSans-300.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 400;
+      src: url('assets/fonts/PlusJakartaSans-400.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 500;
+      src: url('assets/fonts/PlusJakartaSans-500.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 600;
+      src: url('assets/fonts/PlusJakartaSans-600.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 700;
+      src: url('assets/fonts/PlusJakartaSans-700.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 800;
+      src: url('assets/fonts/PlusJakartaSans-800.ttf') format('truetype');
+    }
+
+    :root {
+      --primary: #0d9488;
+      --primary-hover: #0f766e;
+      --secondary: #4f46e5;
+      --accent: #f43f5e;
+      --background: #fafaf9;
+      --card-bg: #ffffff;
+      --border: #e7e5e4;
+      --text: #292524;
+      --text-muted: #78716c;
+      --code-bg: #f5f5f4;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 95%;
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 4rem;
+    }
+
+    /* ── Sidebar Navigation ── */
+    aside {
+      position: sticky;
+      top: 3rem;
+      height: fit-content;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 3rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      font-size: 2.2rem;
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .nav-item a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item a:hover {
+      color: var(--primary);
+      background-color: rgba(13, 148, 136, 0.06);
+    }
+
+    .nav-item.active a {
+      color: var(--primary);
+      background-color: rgba(13, 148, 136, 0.08);
+      font-weight: 600;
+    }
+
+    /* ── Main Content Area ── */
+    main {
+      min-width: 0;
+    }
+
+    header {
+      margin-bottom: 3.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -1px;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      font-weight: 400;
+    }
+
+    section {
+      margin-bottom: 5rem;
+      scroll-margin-top: 3rem;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    /* ── Cards & UI Blocks ── */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.2rem;
+      padding: 2.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02);
+      margin-bottom: 2rem;
+    }
+
+    .step-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .step-list.single-col {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .step-list li {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      background: #fafaf9;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .step-badge {
+      width: 2.5rem;
+      height: 2.5rem;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2);
+    }
+
+    .step-content {
+      font-size: 1rem;
+      color: var(--text);
+      padding-top: 0.2rem;
+    }
+
+    .step-content strong {
+      color: #000;
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+
+    /* ── Callout Grid ── */
+    .callout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .callout {
+      display: flex;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .callout-info {
+      background-color: rgba(13, 148, 136, 0.05);
+      border-left: 4px solid var(--primary);
+      color: var(--text);
+    }
+
+    .callout-warning {
+      background-color: rgba(244, 63, 94, 0.05);
+      border-left: 4px solid var(--accent);
+      color: var(--text);
+    }
+
+    .callout-icon {
+      font-size: 1.3rem;
+      line-height: 1;
+      margin-top: 0.1rem;
+    }
+
+    /* ── Google Integration Layout ── */
+    .google-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    /* ── Code Display Panel ── */
+    .code-container {
+      background: #1e1e24;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+      position: sticky;
+      top: 3rem;
+    }
+
+    .code-header {
+      background: #18181c;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .code-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .copy-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e0e0e0;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 0.35rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      max-height: 520px;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #d4d4d8;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9em;
+      background-color: rgba(13, 148, 136, 0.08);
+      color: var(--primary);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.25rem;
+    }
+
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ── FAQ Grid ── */
+    .faq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .faq-item {
+      background: #fafaf9;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+    }
+
+    .faq-q {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .faq-a {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .google-layout {
+        grid-template-columns: 1fr;
+      }
+      .code-container {
+        position: static;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .step-list {
+        grid-template-columns: 1fr;
+      }
+      .callout-grid {
+        grid-template-columns: 1fr;
+      }
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .wrapper {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      aside {
+        display: none;
+      }
+    }
+
+    /* Float sound button to top-right on this page to avoid sidebar overlap */
+    .sound-btn {
+      position: fixed !important;
+      top: 2rem !important;
+      right: 2rem !important;
+      left: auto !important;
+      width: 2.8rem; height: 2.8rem; border-radius: 50%;
+      background: #ffd166; border: 3px solid #1e293b;
+      color: #1e293b; font-size: 1.15rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; 
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 0 #1e293b;
+      z-index: 999;
+    }
+    .sound-btn:hover { 
+      background: #ffb703; color: #1e293b; 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 0 #1e293b; 
+    }
+    .sound-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  
+  <!-- Navigation Sidebar -->
+  <aside>
+    <a href="index.html" class="brand">
+      <span class="brand-logo">🦜</span>
+      <span class="brand-name">Phonics Parrot</span>
+    </a>
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="index.html" style="color:var(--secondary);font-weight:700;">🏠 Back to Dashboard</a></li>
+      <li class="nav-item active"><a href="#quickstart">Quick Start</a></li>
+      <li class="nav-item"><a href="#google-cloud">Google Drive Sync</a></li>
+      <li class="nav-item"><a href="#local-data">Local Storage</a></li>
+      <li class="nav-item"><a href="#faq">Frequently Asked Questions</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main>
+    <header>
+      <div style="margin-bottom:1.5rem;"><a href="index.html" style="text-decoration:none;color:var(--secondary);font-weight:700;font-size:0.95rem;display:inline-flex;align-items:center;gap:0.3rem;">← Back to Dashboard</a></div>
+      <h1>Teacher Setup Guide</h1>
+      <p class="subtitle">Complete guide to running and managing Phonics Parrot in your classroom.</p>
+    </header>
+
+    <!-- Quick Start -->
+    <section id="quickstart">
+      <h2>🚀 Quick Start</h2>
+      <div class="card">
+        <ul class="step-list">
+          <li>
+            <span class="step-badge">1</span>
+            <div class="step-content">
+              <strong>Extract the files</strong>Extract the downloaded <code>.7z</code> or <code>.zip</code> file onto your desktop or computer folder.
+            </div>
+          </li>
+          <li>
+            <span class="step-badge">2</span>
+            <div class="step-content">
+              <strong>Start the local server</strong>Double-click the <strong><code>START.bat</code></strong> script file in the extracted folder.
+            </div>
+          </li>
+          <li>
+            <span class="step-badge">3</span>
+            <div class="step-content">
+              <strong>Open Phonics Parrot</strong>A browser window will automatically launch to <code>http://localhost:3000</code>.
+            </div>
+          </li>
+          <li>
+            <span class="step-badge">4</span>
+            <div class="step-content">
+              <strong>Keep the server running</strong>Minimise the black console terminal window that popped up. It must remain open while students are playing.
+            </div>
+          </li>
+        </ul>
+
+        <div class="callout-grid">
+          <div class="callout callout-info">
+            <span class="callout-icon">💡</span>
+            <div>
+              <strong>Manual URL:</strong> If the web browser doesn't open automatically, just launch Chrome or Microsoft Edge and navigate directly to <code>http://localhost:3000</code>.
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <span class="callout-icon">📡</span>
+            <div>
+              <strong>Classroom Display &amp; Tablets:</strong> Other devices on the same Wi-Fi network (such as tablets or smart screens) can access the app at the network address printed in the terminal (e.g., <code>http://10.x.x.x:3000</code>).
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Google Cloud Sync -->
+    <section id="google-cloud">
+      <h2>☁️ Google Drive &amp; Sheets Integration</h2>
+      
+      <div class="google-layout">
+        <div class="card">
+          <p style="margin-bottom: 2rem; color: var(--text-muted); font-size: 1.05rem;">
+            Connecting Phonics Parrot to Google Drive enables student voice recordings to upload directly into your cloud folders, and automatically logs performance metrics to a Google Sheet.
+          </p>
+
+          <h3>Step 1: Set up Google Apps Script</h3>
+          <ul class="step-list single-col" style="margin-top: 1rem; margin-bottom: 2rem;">
+            <li>
+              <span class="step-badge">1</span>
+              <div class="step-content">
+                <strong>Open Apps Script</strong>Navigate to your browser and open <a href="https://script.google.com" target="_blank" style="color: var(--secondary); font-weight: 600;">Google Apps Script</a>, then click <strong>New Project</strong>.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">2</span>
+              <div class="step-content">
+                <strong>Clean the file</strong>Delete the default starter code inside the script window.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">3</span>
+              <div class="step-content">
+                <strong>Copy &amp; modify</strong>Copy the AppScript code provided on the right using the copy button, then paste it in.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">4</span>
+              <div class="step-content">
+                <strong>Link Spreadsheet</strong>Replace the value of <code>SPREADSHEET_URL</code> at the very top of the script with your real Google Sheet URL, then save with <strong>Ctrl+S</strong>.
+              </div>
+            </li>
+          </ul>
+
+          <h3>Step 2: Deploy as a Web App</h3>
+          <ul class="step-list single-col" style="margin-top: 1rem; margin-bottom: 2rem;">
+            <li>
+              <span class="step-badge">5</span>
+              <div class="step-content">
+                <strong>Initiate Deployment</strong>Click the blue <strong>Deploy</strong> button in the top right corner, then select <strong>New deployment</strong>.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">6</span>
+              <div class="step-content">
+                <strong>Configure Web App</strong>Click the gear icon (⚙️) next to "Select type", choose <strong>Web app</strong>, and set <strong>Execute as:</strong> Me &amp; <strong>Who has access:</strong> Anyone.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">7</span>
+              <div class="step-content">
+                <strong>Copy Script URL</strong>Click <strong>Deploy</strong>, authorize permissions, and copy the generated <strong>Web App URL</strong>.
+              </div>
+            </li>
+          </ul>
+
+          <h3>Step 3: Connect to Phonics Parrot</h3>
+          <ul class="step-list single-col" style="margin-top: 1rem;">
+            <li>
+              <span class="step-badge">8</span>
+              <div class="step-content">
+                <strong>Edit config file</strong>Open <code>drive_config.json</code> in your app folder using Notepad.
+              </div>
+            </li>
+            <li>
+              <span class="step-badge">9</span>
+              <div class="step-content">
+                <strong>Paste URL</strong>Replace the placeholder URL inside with your Web App URL, save the file, and restart `START.bat`.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sticky Code Container -->
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">appsscript/Code.gs</span>
+            <button class="copy-btn" onclick="copyAppsScript()">Copy Script</button>
+          </div>
+          <div class="code-body">
+            <pre><code id="appsScriptCode">var SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID_HERE/edit";
+var RECORDINGS_FOLDER_NAME = "Phonics Parrot Recordings";
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var driveUrl = "";
+
+    if (data.audioData) {
+      driveUrl = saveAudioToDrive(data);
+    }
+
+    logToSheet(data, driveUrl);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "success", driveUrl: driveUrl }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function saveAudioToDrive(data) {
+  var audioBytes = Utilities.base64Decode(data.audioData);
+  var filename = data.filename || ((data.student || "guest") + "_recording.webm");
+  var blob = Utilities.newBlob(audioBytes, "audio/webm", filename);
+
+  var rootFolders = DriveApp.getFoldersByName(RECORDINGS_FOLDER_NAME);
+  var rootFolder = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder(RECORDINGS_FOLDER_NAME);
+
+  var className = (data.class || "Guest").replace(/[\/\\]/g, "_");
+  var studentName = (data.student || "Guest").replace(/[\/\\]/g, "_");
+  var activity = (data.activity || "activity").replace(/[\/\\]/g, "_");
+
+  var classFolder = getOrCreateSubfolder(rootFolder, className);
+  var studentFolder = getOrCreateSubfolder(classFolder, studentName);
+  var actFolder = getOrCreateSubfolder(studentFolder, activity);
+
+  var file = actFolder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
+
+function getOrCreateSubfolder(parent, name) {
+  var iter = parent.getFoldersByName(name);
+  return iter.hasNext() ? iter.next() : parent.createFolder(name);
+}
+
+function logToSheet(data, driveUrl) {
+  var ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  var student = (data.student || "Guest").trim();
+
+  var sheet = ss.getSheetByName(student);
+  if (!sheet) {
+    sheet = ss.insertSheet(student);
+    sheet.appendRow([
+      "Timestamp", "Class", "Activity",
+      "Target Word / Phrase", "Phoneme",
+      "Spoken Word", "Score", "Verdict",
+      "Audio Recording Link"
+    ]);
+    sheet.getRange(1, 1, 1, 9).setFontWeight("bold");
+    sheet.setFrozenRows(1);
+  }
+
+  sheet.appendRow([
+    data.timestamp || new Date().toISOString(),
+    data.teacher || data.class || "",
+    data.activity || "",
+    data.target || "",
+    data.phoneme || "",
+    data.spoken || "",
+    data.score !== undefined ? data.score : "",
+    data.verdict || "",
+    driveUrl || ""
+  ]);
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Local Data -->
+    <section id="local-data">
+      <h2>💾 Local Storage &amp; Safety</h2>
+      <div class="card">
+        <p style="color: var(--text-muted); margin-bottom: 1.25rem; font-size: 1.05rem;">
+          Even if you choose not to set up the Google Cloud Integration, your student records are fully saved locally:
+        </p>
+        <ul style="padding-left: 1.25rem; margin-bottom: 1.25rem; color: var(--text-muted); font-size: 1rem; line-height: 1.8;">
+          <li style="margin-bottom: 0.5rem;">Audio recordings are stored directly in the <code>recordings/</code> folder.</li>
+          <li>Grades and progress logs are written to <code>performance_log.json</code>.</li>
+        </ul>
+        <p style="color: var(--text-muted); font-size: 1rem;">
+          This means you can always view student work locally, even without an active internet connection.
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <h2>❓ Frequently Asked Questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-q">Does the application require internet?</div>
+          <div class="faq-a">Yes, but only for the speech-to-text microphone capability (which queries the browser's speech recognition engine). The interactive lessons and data storage are fully local and offline.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Can multiple tablets connect to a single host computer?</div>
+          <div class="faq-a">Yes. Simply open the URL displayed in the server terminal (e.g. <code>http://192.168.x.x:3000</code>) on all tablets connected to the same Wi-Fi.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What happens if a port already in use error occurs?</div>
+          <div class="faq-a">Phonics Parrot will automatically detect the port conflict and bind to the next available port (e.g. 3001). Check the terminal output to verify the port number.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Which web browsers are supported?</div>
+          <div class="faq-a">We recommend using Google Chrome or Microsoft Edge, as Firefox has limited Speech Recognition support.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  function copyAppsScript() {
+    var code = document.getElementById("appsScriptCode").textContent;
+    navigator.clipboard.writeText(code).then(function() {
+      var btn = document.querySelector(".copy-btn");
+      btn.textContent = "Copied!";
+      setTimeout(function() {
+        btn.textContent = "Copy Script";
+      }, 2000);
+    }).catch(function(err) {
+      alert("Failed to copy code. Please highlight and copy manually.");
+    });
+  }
+
+  // Active state link tracking
+  const sections = document.querySelectorAll("section");
+  const navItems = document.querySelectorAll(".nav-item");
+
+  window.addEventListener("scroll", () => {
+    let current = "";
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      if (pageYOffset >= sectionTop - 120) {
+        current = section.getAttribute("id");
+      }
+    });
+
+    navItems.forEach(item => {
+      item.classList.remove("active");
+      const link = item.querySelector("a").getAttribute("href").substring(1);
+      if (link === current) {
+        item.classList.add("active");
+      }
+    });
+  });
+</script>
+<script src="assets/js/audio.js"></script>
+</body>
+</html>

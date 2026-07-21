@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 600" preserveAspectRatio="none">
+  <style>
+    @keyframes sway-left {
+      0% { transform: rotate(-1.5deg) translateX(-2px); }
+      100% { transform: rotate(1.5deg) translateX(2px); }
+    }
+    .sway-left-group {
+      animation: sway-left 6s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+  </style>
+  <g class="sway-left-group">
+    <!-- Main winding stem -->
+    <path d="M 110,600 C 60,480 160,360 110,240 C 60,120 150,50 110,0" fill="none" stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 110,600 C 60,480 160,360 110,240 C 60,120 150,50 110,0" fill="none" stroke="#1b4d3e" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Level 1 (Y ~ 500) -->
+    <!-- Leaf Left -->
+    <path d="M 90,520 C 50,510 40,470 85,480 Z" fill="#2ec4b6" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 90,520 C 70,510 60,495 85,480" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Flower Right -->
+    <g transform="translate(130, 490)">
+      <circle cx="-7" cy="0" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="7" cy="0" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="-7" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="7" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#fef9c3" stroke="#1e293b" stroke-width="2"/>
+    </g>
+
+    <!-- Level 2 (Y ~ 430) -->
+    <!-- Leaf Right -->
+    <path d="M 130,440 C 170,430 180,390 135,400 Z" fill="#4ad66d" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 130,440 C 150,430 160,415 135,400" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+    <!-- Level 3 (Y ~ 360) -->
+    <!-- Leaf Left -->
+    <path d="M 85,380 C 45,370 35,330 80,340 Z" fill="#2ec4b6" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 85,380 C 65,370 55,355 80,340" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Flower Left -->
+    <g transform="translate(60, 350) scale(0.9)">
+      <circle cx="-7" cy="0" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="7" cy="0" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="-7" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="7" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#fff" stroke="#1e293b" stroke-width="2"/>
+    </g>
+
+    <!-- Level 4 (Y ~ 290) -->
+    <!-- Leaf Right -->
+    <path d="M 125,300 C 165,290 175,250 130,260 Z" fill="#4ad66d" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 125,300 C 145,290 155,275 130,260" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+    <!-- Level 5 (Y ~ 220) -->
+    <!-- Leaf Left -->
+    <path d="M 90,230 C 50,220 40,180 85,190 Z" fill="#2ec4b6" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 90,230 C 70,220 60,205 85,190" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Flower Right -->
+    <g transform="translate(135, 205)">
+      <circle cx="-7" cy="0" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="7" cy="0" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="-7" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="7" r="7" fill="#ff7b00" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#fef9c3" stroke="#1e293b" stroke-width="2"/>
+    </g>
+
+    <!-- Level 6 (Y ~ 150) -->
+    <!-- Leaf Right -->
+    <path d="M 125,160 C 165,150 175,110 130,120 Z" fill="#4ad66d" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 125,160 C 145,150 155,135 130,120" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+    <!-- Level 7 (Y ~ 80) -->
+    <!-- Leaf Left -->
+    <path d="M 95,90 C 55,80 45,40 90,50 Z" fill="#2ec4b6" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 95,90 C 75,80 65,65 90,50" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Flower Left -->
+    <g transform="translate(65, 60) scale(0.9)">
+      <circle cx="-7" cy="0" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="7" cy="0" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="-7" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="7" r="7" fill="#e94560" stroke="#1e293b" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#fff" stroke="#1e293b" stroke-width="2"/>
+    </g>
+  </g>
+</svg>

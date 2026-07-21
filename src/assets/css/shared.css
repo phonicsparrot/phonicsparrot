@@ -1,0 +1,405 @@
+/*
+ * shared.css — Phonics Parrot Kid-Friendly Styles  v10.0
+ *
+ * Cheerful, highly accessible layout tailored for Year 1-2 children (ages 6-8).
+ * Incorporates 3D comic/cartoon aesthetic with high contrast for classroom use.
+ */
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/Fredoka-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/Fredoka-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/Fredoka-700.ttf') format('truetype');
+}
+
+/* ── RESET ─────────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html {
+  font-size: 16px;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Fredoka", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #bae6fd;
+  color: #1e293b;
+  width: 100vw; height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none;
+}
+
+/* ── PORTRAIT LOCK ─────────────────────────────────────────── */
+#rotate-msg {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: #bae6fd; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.2rem; text-align: center; padding: 2rem;
+  color: #1e293b;
+}
+.rotate-icon { font-size: 5rem; animation: rotate-hint 2s ease-in-out infinite; }
+@keyframes rotate-hint { 0%,100%{transform:rotate(0deg)} 30%,70%{transform:rotate(-90deg)} }
+.rotate-title { font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
+.rotate-sub { font-size: 1.2rem; opacity: 0.6; max-width: 400px; line-height: 1.6; }
+
+/* ── SCALE ROOT ────────────────────────────────────────────── */
+#scale-root {
+  position: relative; z-index: 10;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ── BACKGROUND ────────────────────────────────────────────── */
+.bg { 
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 50%, #fef9c3 100%); 
+}
+.bg-shader {
+  position: fixed; inset: 0; z-index: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+
+
+/* Soft warm sun glow orbs */
+.orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1; }
+.orb-1 { width: 26rem; height: 26rem; top: -8%; left: -5%; background: #ff7b00; opacity: 0.14; animation: drift 22s infinite alternate; }
+.orb-2 { width: 22rem; height: 22rem; top: 60%; right: -6%; background: #e94560; opacity: 0.12; animation: drift 28s infinite alternate; animation-delay: -5s; }
+.orb-3 { width: 19rem; height: 19rem; bottom: -5%; left: 30%; background: #2ec4b6; opacity: 0.12; animation: drift 25s infinite alternate; animation-delay: -10s; }
+.orb-4 { width: 17rem; height: 17rem; top: 15%; right: 25%; background: #ff7b00; opacity: 0.08; animation: drift 30s infinite alternate; animation-delay: -8s; }
+@keyframes drift { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-40px) scale(1.1)} 66%{transform:translate(-20px,30px) scale(.95)} 100%{transform:translate(10px,-15px) scale(1.05)} }
+
+/* ── CLOUDS ────────────────────────────────────────────────── */
+.clouds {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+}
+.cloud {
+  position: absolute; background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  animation: float-cloud linear infinite;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05));
+}
+.cloud::before, .cloud::after {
+  content: ''; position: absolute; background: rgba(255, 255, 255, 0.85); border-radius: 50%;
+}
+.cloud-sm { width: 120px; height: 40px; }
+.cloud-sm::before { width: 50px; height: 50px; top: -25px; left: 15px; }
+.cloud-sm::after { width: 70px; height: 70px; top: -35px; right: 15px; }
+.cloud-md { width: 220px; height: 70px; }
+.cloud-md::before { width: 90px; height: 90px; top: -45px; left: 25px; }
+.cloud-md::after { width: 120px; height: 120px; top: -60px; right: 25px; }
+
+@keyframes float-cloud {
+  from { transform: translateX(105vw); }
+  to { transform: translateX(-260px); }
+}
+
+/* ── MOTES (Soap Bubbles) ──────────────────────────────────── */
+.motes { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+.mote { position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.45); border: 1.5px solid rgba(255,255,255,0.7);
+  animation: mote-rise linear infinite; }
+@keyframes mote-rise { 
+  0%{transform:translateY(0) scale(1);opacity:0} 
+  10%{opacity:.8} 
+  90%{opacity:.8} 
+  100%{transform:translateY(-100vh) scale(.3);opacity:0} 
+}
+
+/* ── 3D FLAT CARTOON CARDS ─────────────────────────────────── */
+.card, .panel, .setup-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 3.5px solid #1e293b;
+  border-radius: 24px;
+  color: #1e293b;
+  box-shadow: 0 10px 0 #1e293b, 0 20px 30px rgba(30, 41, 59, 0.08);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+a.card:hover, .grid .card:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 14px 0 #1e293b, 0 25px 35px rgba(30, 41, 59, 0.12);
+}
+
+/* ── MIC SETUP OVERLAY ─────────────────────────────────────── */
+.setup {
+  position: absolute; inset: 0; z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(224, 242, 254, 0.95); backdrop-filter: blur(10px);
+  transition: opacity .5s, visibility .5s;
+}
+.setup.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+.setup-parrot { font-size: 7rem; animation: parrot-bob 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 8px 0 #1e293b); }
+@keyframes parrot-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+@keyframes talk-bob { 0%{transform:scale(1) rotate(-3deg)} 100%{transform:scale(1.12) rotate(3deg)} }
+@keyframes wave-bar { 0%,100%{height:8px;opacity:.4} 50%{height:28px;opacity:1} }
+
+.setup h1 { font-size: 3rem; font-weight: 900; margin: 1rem 0 .4rem;
+  color: #ff7b00; text-shadow: 3px 3px 0 #1e293b, -1px -1px 0 #1e293b, 1px -1px 0 #1e293b, -1px 1px 0 #1e293b, 1px 1px 0 #1e293b; }
+.setup .sub { color: #475569; font-size: 1.25rem; margin-bottom: 2rem; max-width: 520px; text-align: center; font-weight: 600; }
+
+/* ── TACTILE 3D BUTTONS ────────────────────────────────────── */
+.enable-btn, .btn, .nav-btn, .again-btn {
+  font-family: "Fredoka", sans-serif;
+  padding: 1.1rem 2.8rem; font-size: 1.3rem; font-weight: 700;
+  border: 3.5px solid #1e293b; border-radius: 18px; 
+  background: #ff7b00;
+  color: #fff; cursor: pointer;
+  box-shadow: 0 6px 0 #1e293b; 
+  transition: transform 0.1s, box-shadow 0.1s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+}
+.enable-btn:hover, .btn:hover, .nav-btn:hover, .again-btn:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 8px 0 #1e293b; 
+  filter: brightness(1.05);
+}
+.enable-btn:active, .btn:active, .nav-btn:active, .again-btn:active { 
+  transform: translateY(4px); 
+  box-shadow: 0 2px 0 #1e293b; 
+}
+.enable-btn { background: #2ec4b6; }
+.enable-btn:hover { background: #2ec4b6; }
+
+.setup .err { color: #e94560; margin-top: 1rem; font-weight: 700; font-size: 1.15rem; opacity: 0; transition: opacity .3s; }
+.setup .err.show { opacity: 1; }
+.tip-box { margin-top: 2rem; padding: 1.2rem 2rem; border-radius: 18px;
+  background: rgba(255,255,255,.8); border: 2.5px dashed #94a3b8;
+  max-width: 600px; text-align: center; font-size: 1.05rem; line-height: 1.6; color: #475569; font-weight: 600; }
+
+/* ── BUBBLY EXIT BUTTON ────────────────────────────────────── */
+.exit-btn {
+  position: absolute; top: 2rem; right: 2.5rem; z-index: 500;
+  width: 2.8rem; height: 2.8rem; border-radius: 50%;
+  background: #fff; border: 3px solid #1e293b;
+  color: #1e293b; font-size: 1.15rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; 
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+  box-shadow: 0 4px 0 #1e293b;
+}
+.exit-btn:hover { 
+  background: #ff4d6d; color: #fff; 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 0 #1e293b; 
+}
+.exit-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #1e293b;
+}
+
+/* ── BUBBLY SOUND TOGGLE BUTTON ────────────────────────────── */
+.sound-btn {
+  position: absolute; top: 2rem; left: 2.5rem; z-index: 500;
+  width: 2.8rem; height: 2.8rem; border-radius: 50%;
+  background: #ffd166; border: 3px solid #1e293b;
+  color: #1e293b; font-size: 1.15rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; 
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 0 #1e293b;
+}
+.sound-btn:hover { 
+  background: #ffb703; color: #1e293b; 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 0 #1e293b; 
+}
+.sound-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #1e293b;
+}
+
+/* ── STATUS DOT ────────────────────────────────────────────── */
+.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+  background: #e94560; margin-left: .15rem; vertical-align: middle;
+  transition: background .3s; border: 2px solid #1e293b; }
+.dot.ok { background: #2ec4b6; }
+
+/* ── KEYBOARD HINTS ────────────────────────────────────────── */
+.keys { position: absolute; bottom: .6rem; right: 7rem; font-size: .8rem;
+  opacity: .35; z-index: 10; pointer-events: none; color: #1e293b; font-weight: 700; }
+.keys kbd { background: #fff; padding: .15rem .45rem; border: 1.5px solid #1e293b;
+  border-radius: .3rem; font-family: monospace; font-size: .9em; box-shadow: 0 2px 0 #1e293b; color: #1e293b; }
+body.classroom-mode .keys,
+body.classroom-mode .keys kbd { font-size: 1.05rem; }
+
+/* ── CUSTOM ALERT DIALOG MODAL ──────────────────────────────── */
+.custom-modal-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: all 0.25s ease-out;
+}
+.custom-modal-overlay.show {
+  opacity: 1; visibility: visible;
+}
+.custom-modal-card {
+  background: #fff; border: 4px solid #1e293b;
+  border-radius: 24px; padding: 2rem; width: 92%; max-width: 480px;
+  box-shadow: 0 10px 0 #1e293b, 0 30px 45px rgba(0,0,0,0.15);
+  text-align: center; color: #1e293b;
+  transform: scale(0.85); transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+.custom-modal-overlay.show .custom-modal-card {
+  transform: scale(1);
+}
+.custom-modal-mascot {
+  font-size: 5rem; margin-bottom: 0.8rem;
+  animation: parrot-bob 1.8s infinite ease-in-out;
+  display: inline-block; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.1));
+}
+.custom-modal-title {
+  font-size: 1.7rem; font-weight: 800; margin-bottom: 0.6rem; color: #ff7b00;
+  text-shadow: 1px 1px 0 #fff;
+}
+.custom-modal-msg {
+  font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.8rem; color: #475569; font-weight: 600;
+}
+.custom-modal-btn {
+  background: #2ec4b6; color: white !important;
+  border: 3.5px solid #1e293b; border-radius: 16px;
+  padding: 0.75rem 2.2rem; font-size: 1.15rem; font-weight: 700;
+  box-shadow: 0 5px 0 #1e293b; cursor: pointer; transition: all 0.1s;
+  font-family: "Fredoka", sans-serif;
+}
+.custom-modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #1e293b;
+}
+.custom-modal-btn:active {
+  transform: translateY(3px); box-shadow: 0 2px 0 #1e293b;
+}
+
+/* ── APP LOADING SCREEN ──────────────────────────────────────── */
+#app-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: radial-gradient(circle at center, #e0f2fe 0%, #bae6fd 60%, #fef9c3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-logo-wrapper {
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  height: 366px; /* 300 * (552.75 / 452.88) = ~366px */
+  opacity: 0;
+  transform: scale(0.85);
+  animation: loading-card-in 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             loading-card-float 4s ease-in-out infinite 0.8s;
+}
+
+@keyframes loading-card-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes loading-card-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.5deg); }
+}
+
+#loading-svg-element {
+  width: 100%;
+  height: 100%;
+}
+
+/* Eye blinking animation */
+.eye-path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink-animation 4.5s infinite ease-in-out;
+}
+
+@keyframes blink-animation {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  93%, 97% {
+    transform: scaleY(0.15);
+  }
+}
+
+/* Swaying sign animation (parrot and stick) */
+#swaying-sign {
+  transform-origin: 226.44px 0px; /* Swing from top center pivot */
+  animation: sway-animation 6s infinite ease-in-out;
+}
+
+@keyframes sway-animation {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+.loading-progress-container {
+  width: 200px;
+  height: 10px;
+  background: rgba(30, 41, 59, 0.1);
+  border: 3px solid #1e293b;
+  border-radius: 10px;
+  margin-top: 2.5rem;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 0 #1e293b;
+}
+
+.loading-progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #ff7b00;
+  border-radius: 10px;
+  transition: width 0.1s ease;
+}
+
+.loading-status-text {
+  font-family: "Fredoka", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: loading-text-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-text-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+

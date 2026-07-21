@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phonics Parrot — Teacher Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+  <meta name="theme-color" content="#2ec4b6">
+  <link rel="stylesheet" href="../assets/css/shared.css">
+  <style>
+    #scale-root > .shell {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-bottom: 8px solid #ff7b00 !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app {
+      flex: 1;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      padding: 1.4rem 2.5rem;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .head {
+      text-align: center;
+      flex-shrink: 0;
+      margin-bottom: 1rem;
+    }
+    .head h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      color: #1e293b;
+    }
+    .head h1 .p-icon {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 4px 0 rgba(30,41,59,0.15));
+    }
+
+    .content {
+      display: flex;
+      gap: 1.5rem;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .panel {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.85);
+      border: 3.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 6px 0 #1e293b;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .panel h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      color: #ff7b00;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel h2 button {
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.35rem 0.9rem;
+      background: #ffebee;
+      color: #e94560;
+      border: 2px solid #1e293b;
+      border-radius: 0.6rem;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 3px 0 #1e293b;
+      transition: all 0.1s;
+    }
+    .panel h2 button:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #1e293b; }
+    .panel h2 button:active { transform: translateY(2px); box-shadow: 0 1px 0 #1e293b; }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      background: #fff;
+      border: 3px solid #1e293b;
+      color: #1e293b;
+      border-radius: 14px;
+      padding: 1rem;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      font-family: inherit;
+      resize: none;
+      margin-bottom: 1rem;
+      -webkit-user-select: text;
+      user-select: text;
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.05);
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #2ec4b6;
+    }
+
+    .builder-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      min-height: 0;
+    }
+    .builder-area::-webkit-scrollbar {
+      width: 12px;
+    }
+    .builder-area::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 8px;
+      border: 2.5px solid #1e293b;
+    }
+    .builder-area::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+      border: 2.5px solid #1e293b;
+    }
+    .builder-line {
+      background: #f8fafc;
+      border: 2.5px solid #1e293b;
+      border-radius: 12px;
+      padding: 0.8rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.8;
+      color: #1e293b;
+    }
+    .b-word {
+      display: inline-block;
+      padding: 0.15rem 0.4rem;
+      margin: 0 0.15rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 700;
+      border: 1.5px dashed transparent;
+    }
+    .b-word:hover { background: #e2e8f0; border-color: #1e293b; }
+
+    .btn {
+      background: #fff;
+      border: 3px solid #1e293b;
+      color: #1e293b;
+      padding: 0.7rem 1.5rem;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.1s;
+      font-family: inherit;
+      width: 100%;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #1e293b; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1e293b; }
+    .btn.primary { background: #ff7b00; color: #fff; }
+
+    .instruction {
+      font-size: 0.9rem;
+      color: #475569;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      line-height: 1.4;
+    }
+
+    /* Phoneme popup */
+    #popup {
+      position: fixed;
+      background: #fff;
+      border: 3.5px solid #1e293b;
+      border-radius: 18px;
+      padding: 0.8rem;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 0 8px 0 #1e293b, 0 15px 30px rgba(0,0,0,0.15);
+      width: 360px;
+      max-height: 400px;
+      overflow-y: auto;
+      color: #1e293b;
+    }
+    #popup.show { display: flex; }
+
+    .pop-cat-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #475569;
+      text-transform: uppercase;
+      margin: 0.5rem 0 0.3rem 0.2rem;
+    }
+    .pop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.35rem;
+    }
+    .pop-btn {
+      background: #f1f5f9;
+      border: 2.5px solid #1e293b;
+      color: #1e293b;
+      padding: 0.5rem 0.2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: monospace;
+      transition: all 0.15s;
+      box-shadow: 0 2px 0 #1e293b;
+    }
+    .pop-btn:hover { background: #e2e8f0; transform: translateY(-2px); box-shadow: 0 4px 0 #1e293b; }
+    .pop-btn .ex {
+      font-size: 0.65rem;
+      color: #475569;
+      font-weight: 600;
+      font-family: inherit;
+      margin-top: 0.2rem;
+    }
+    .pb-clear {
+      color: #e94560;
+      font-style: italic;
+      border-top: 2px dashed #cbd5e1;
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      background: transparent;
+      border-left: none; border-right: none; border-bottom: none;
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
+    }
+    .pb-clear:hover { background: #ffebee; color: #ef4444; }
+
+    @media (max-width: 768px) {
+      .content { flex-direction: column; overflow: hidden; }
+      .panel { flex: none; height: 350px; }
+      .builder-area { overflow: hidden; }
+    }
+    select option {
+      background: #fff;
+      color: #1e293b;
+    }
+    select {
+      background: #fff;
+      border: 3px solid #1e293b;
+      border-radius: 12px;
+      padding: 0.5rem;
+      font-family: inherit;
+      font-weight: 700;
+      color: #1e293b;
+      box-shadow: 0 3px 0 #1e293b;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="rotate-msg">
+  <div class="rotate-icon">📱</div>
+  <div class="rotate-title">Rotate Your Device</div>
+  <div class="rotate-sub">Phonics Parrot works best in landscape mode.</div>
+</div>
+
+<canvas id="bg-shader-canvas" class="bg-shader"></canvas>
+<div class="bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="motes" id="motes"></div>
+
+<div id="scale-root">
+  <button id="exitBtn" class="exit-btn" title="Exit to Home" style="position:absolute;top:0.8rem;right:1rem;z-index:500;">✕</button>
+  <div class="shell">
+    <div class="app">
+
+      <div class="head">
+        <h1>
+          <img src="../assets/img/poster.svg" class="mascot-head-img" style="height:48px;width:auto;object-fit:contain;margin-right:8px;vertical-align:middle;filter:drop-shadow(0 2px 0 rgba(30,41,59,0.15));" alt="Logo">
+          Teacher Dashboard
+        </h1>
+      </div>
+
+      <!-- v7: Teacher/Student/Class Login & Google Sheets Integration -->
+      <div style="background:#f8fafc;border:2.5px solid #1e293b;border-radius:18px;padding:0.8rem 1rem;margin-bottom:0.8rem;display:flex;flex-direction:column;gap:0.6rem;flex-shrink:0;z-index:100;position:relative;box-shadow:0 4px 0 #1e293b;">
+        <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;width:100%;">
+          <input id="teacherName" placeholder="Teacher name" maxLength="40" autoComplete="off"
+            style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+              border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:inherit;width:140px;box-shadow:0 3px 0 #1e293b;outline:none;">
+          <select id="className"
+            style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+              border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:inherit;width:140px;outline:none;box-shadow:0 3px 0 #1e293b;">
+            <option value="" disabled selected>Select Class</option>
+            <option value="__NEW__">+ Add New Class...</option>
+          </select>
+          <input id="studentName" placeholder="Student name" maxLength="40" autoComplete="off"
+            style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+              border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:inherit;width:140px;box-shadow:0 3px 0 #1e293b;outline:none;">
+          <button id="loginBtn"
+            style="background:#2ec4b6;border:2.5px solid #1e293b;color:#fff;
+              border-radius:0.5rem;padding:0.4rem 1rem;font-size:0.85rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all 0.15s;box-shadow:0 3px 0 #1e293b;">
+            Save &amp; Login</button>
+          <span id="loginStatus" style="font-size:0.75rem;opacity:0.8;color:#1e293b;font-weight:700;margin-left:0.3rem;"></span>
+        </div>
+        <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;width:100%;">
+          <input id="gsheetUrl" placeholder="Google Sheets Web App URL (for logging performance)" maxLength="500" autoComplete="off"
+            style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+              border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.8rem;font-family:inherit;flex:1;box-shadow:0 3px 0 #1e293b;outline:none;">
+          <input id="geminiApiKey" placeholder="Google Gemini API Key (optional, for AI chatbot parrot)" type="password" maxLength="150" autoComplete="off"
+            style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+              border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.8rem;font-family:inherit;flex:1;box-shadow:0 3px 0 #1e293b;outline:none;">
+        </div>
+      </div>
+
+
+      <div class="content">
+
+        <!-- Left panel: text input -->
+        <div class="panel">
+          <h2>
+            1. Paste Poem / Song
+            <button id="resetBtn">Clear All</button>
+          </h2>
+          <p class="instruction">Enter one sentence or phrase per line.</p>
+          
+          <div style="display:flex;gap:0.8rem;margin-bottom:0.8rem;width:100%;">
+            <input id="lessonTitle" placeholder="Lesson Title (e.g. My Free Time)" maxLength="60" autoComplete="off"
+              style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+                border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:inherit;flex:2;outline:none;box-shadow:0 3px 0 #1e293b;">
+            <select id="contentType"
+              style="background:#fff;border:2.5px solid #1e293b;color:#1e293b;
+                border-radius:0.5rem;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:inherit;flex:1;outline:none;box-shadow:0 3px 0 #1e293b;">
+              <option value="poem">Poem</option>
+              <option value="song">Song</option>
+              <option value="chant">Chant</option>
+              <option value="story">Story</option>
+            </select>
+          </div>
+
+          <textarea id="rawInput" placeholder="I like free time, I like free time!
+What do you like to do in your free time?"></textarea>
+          <button class="btn" id="parseBtn">Process Text →</button>
+        </div>
+
+        <!-- Right panel: word tagging -->
+        <div class="panel">
+          <h2>2. Mark Target Sounds</h2>
+          <p class="instruction">Click a word to assign a phonics rule. Tagged words will be tested in all activities.</p>
+          <div class="builder-area" id="builderArea">
+            <div style="opacity:0.3;text-align:center;padding:2rem;">Process text first.</div>
+          </div>
+          <button class="btn primary" id="saveBtn" style="margin-top:1rem;display:none;">💾 Save &amp; Apply to All Activities</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Phoneme popup — outside scale-root so it isn't clipped -->
+<div id="popup">
+  <div id="popupContent"></div>
+  <button class="pb-clear" id="btnClearTag">Remove Tag</button>
+</div>
+
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/audio.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script>
+"use strict";
+
+new PhonicsLayout(1280, 720);
+
+// ── Phoneme library ────────────────────────────────────────────
+var PHONEME_LIBRARY = {
+  "Vowels": [
+    { ipa: "/ɪ/",  ex: "sit"   }, { ipa: "/i:/", ex: "seat"  },
+    { ipa: "/ʊ/",  ex: "look"  }, { ipa: "/u:/", ex: "too"   },
+    { ipa: "/e/",  ex: "bed"   }, { ipa: "/ə/",  ex: "about" },
+    { ipa: "/ɜ:/", ex: "bird"  }, { ipa: "/ɔ:/", ex: "door"  },
+    { ipa: "/æ/",  ex: "cat"   }, { ipa: "/ʌ/",  ex: "up"    },
+    { ipa: "/ɑ:/", ex: "car"   }, { ipa: "/ɒ/",  ex: "on"    },
+  ],
+  "Diphthongs": [
+    { ipa: "/ɪə/", ex: "here"  }, { ipa: "/ʊə/", ex: "tour"  },
+    { ipa: "/eə/", ex: "hair"  }, { ipa: "/eɪ/", ex: "wait"  },
+    { ipa: "/ɔɪ/", ex: "boy"   }, { ipa: "/aɪ/", ex: "my"    },
+    { ipa: "/əʊ/", ex: "show"  }, { ipa: "/aʊ/", ex: "cow"   },
+  ],
+  "Consonants": [
+    { ipa: "/p/",  ex: "pig"   }, { ipa: "/b/",  ex: "bed"   },
+    { ipa: "/t/",  ex: "time"  }, { ipa: "/d/",  ex: "do"    },
+    { ipa: "/k/",  ex: "cat"   }, { ipa: "/g/",  ex: "go"    },
+    { ipa: "/f/",  ex: "five"  }, { ipa: "/v/",  ex: "very"  },
+    { ipa: "/s/",  ex: "sun"   }, { ipa: "/z/",  ex: "zoo"   },
+    { ipa: "/θ/",  ex: "think" }, { ipa: "/ð/",  ex: "that"  },
+    { ipa: "/ʃ/",  ex: "shoe"  }, { ipa: "/ʒ/",  ex: "vision"},
+    { ipa: "/h/",  ex: "hat"   }, { ipa: "/m/",  ex: "man"   },
+    { ipa: "/n/",  ex: "no"    }, { ipa: "/ŋ/",  ex: "sing"  },
+    { ipa: "/l/",  ex: "leg"   }, { ipa: "/r/",  ex: "red"   },
+    { ipa: "/w/",  ex: "we"    }, { ipa: "/j/",  ex: "yes"   },
+    { ipa: "/tʃ/", ex: "chair" }, { ipa: "/dʒ/", ex: "jump"  },
+  ],
+};
+
+// ── Build popup UI ──────────────────────────────────────────────
+var popupContent = $id("popupContent");
+var catNames = Object.keys(PHONEME_LIBRARY);
+for (var ci = 0; ci < catNames.length; ci++) {
+  var catName  = catNames[ci];
+  var phonemes = PHONEME_LIBRARY[catName];
+
+  var title = document.createElement("div");
+  title.className   = "pop-cat-title";
+  title.textContent = catName;
+  popupContent.appendChild(title);
+
+  var grid = document.createElement("div");
+  grid.className = "pop-grid";
+
+  for (var pi = 0; pi < phonemes.length; pi++) {
+    (function (ph) {
+      var btn   = document.createElement("button");
+      btn.className = "pop-btn";
+      var color = getPhonemeColor(ph.ipa);
+      btn.style.color = color;
+      btn.innerHTML = "<span>" + ph.ipa + "</span><span class=\"ex\">" + ph.ex + "</span>";
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        if (!_currentWord) return;
+        _linesData[_currentWord.lineIdx].targets[_currentWord.cleanWord] = ph.ipa;
+        $id("popup").classList.remove("show");
+        renderBuilder();
+      };
+      grid.appendChild(btn);
+    })(phonemes[pi]);
+  }
+  popupContent.appendChild(grid);
+}
+
+// ── State ────────────────────────────────────────────────────────
+var _linesData   = [];
+var _currentWord = null;
+
+// ── Events ───────────────────────────────────────────────────────
+$id("exitBtn").onclick = function () { window.location.href = "../index.html"; };
+
+$id("resetBtn").onclick = function () {
+  if (confirm("Clear all text and tags?")) {
+    $id("rawInput").value = "";
+    _linesData = [];
+    $id("builderArea").innerHTML =
+      '<div style="opacity:0.3;text-align:center;padding:2rem;">Process text first.</div>';
+    $id("saveBtn").style.display = "none";
+    localStorage.removeItem("CUSTOM_POEM");
+  }
+};
+
+$id("parseBtn").onclick = function () {
+  var raw = $id("rawInput").value.trim();
+  if (!raw) return;
+
+  var lines = raw.split("\n")
+    .map(function (l) { return l.trim(); })
+    .filter(function (l) { return l.length > 0; });
+
+  var newData = [];
+  for (var i = 0; i < lines.length; i++) {
+    var existing = null;
+    for (var j = 0; j < _linesData.length; j++) {
+      if (_linesData[j].text === lines[i]) { existing = _linesData[j]; break; }
+    }
+    newData.push(existing || { text: lines[i], targets: {} });
+  }
+  _linesData = newData;
+  renderBuilder();
+  $id("saveBtn").style.display = "block";
+};
+
+function renderBuilder() {
+  var container = $id("builderArea");
+  container.innerHTML = "";
+
+  for (var lineIdx = 0; lineIdx < _linesData.length; lineIdx++) {
+    (function (li) {
+      var lineObj = _linesData[li];
+      var lineDiv = document.createElement("div");
+      lineDiv.className = "builder-line";
+
+      var words = lineObj.text.split(/\s+/);
+      for (var wi = 0; wi < words.length; wi++) {
+        (function (word) {
+          var cleanWord = word.toLowerCase().replace(/[^\w]/g, "");
+          var span = document.createElement("span");
+          span.className   = "b-word";
+          span.textContent = word;
+
+          if (cleanWord && lineObj.targets[cleanWord]) {
+            var ipa = lineObj.targets[cleanWord];
+            var c   = getPhonemeColor(ipa);
+            span.style.color        = c;
+            span.style.borderBottom = "2px solid " + c;
+            span.style.background   = c.replace("hsl", "hsla").replace(")", ", 0.2)");
+            span.style.fontWeight   = "bold";
+          }
+
+          span.onclick = function (e) {
+            if (!cleanWord) return;
+            showPopup(e.target, li, cleanWord);
+            e.stopPropagation();
+          };
+
+          lineDiv.appendChild(span);
+          lineDiv.appendChild(document.createTextNode(" "));
+        })(words[wi]);
+      }
+
+      container.appendChild(lineDiv);
+    })(lineIdx);
+  }
+}
+
+function showPopup(el, lineIdx, cleanWord) {
+  _currentWord = { el: el, lineIdx: lineIdx, cleanWord: cleanWord };
+  var popup = $id("popup");
+
+  // Measure popup height by displaying it temporarily off-screen
+  popup.style.display = "flex";
+  popup.style.visibility = "hidden";
+  var popupHeight = popup.offsetHeight;
+  popup.style.display = "";
+  popup.style.visibility = "";
+
+  var rect  = el.getBoundingClientRect();
+  
+  // Default position below the word
+  var top = rect.bottom + 5;
+  
+  // Flip above the word if it would overflow the viewport bottom
+  if (top + popupHeight > window.innerHeight) {
+    top = rect.top - popupHeight - 5;
+  }
+  
+  var left = rect.left;
+  var maxLeft = window.innerWidth - 360; // popup width is 360px
+  
+  popup.style.top  = Math.max(10, top) + "px";
+  popup.style.left = Math.max(10, Math.min(left, maxLeft)) + "px";
+  popup.classList.add("show");
+}
+
+// Close popup on outside click
+document.addEventListener("click", function () {
+  $id("popup").classList.remove("show");
+});
+$id("popup").addEventListener("click", function (e) { e.stopPropagation(); });
+
+$id("btnClearTag").onclick = function (e) {
+  e.stopPropagation();
+  if (!_currentWord) return;
+  delete _linesData[_currentWord.lineIdx].targets[_currentWord.cleanWord];
+  $id("popup").classList.remove("show");
+  renderBuilder();
+};
+
+$id("saveBtn").onclick = function () {
+  var hasTargets = false;
+  for (var i = 0; i < _linesData.length; i++) {
+    if (Object.keys(_linesData[i].targets).length > 0) { hasTargets = true; break; }
+  }
+  if (!hasTargets) {
+    alert("Please mark at least one target word by clicking on it.");
+    return;
+  }
+  
+  // Save custom title and content type
+  var title = $id("lessonTitle").value.trim() || "My Free Time";
+  var type = $id("contentType").value || "poem";
+  localStorage.setItem("PP_LESSON_TITLE", title);
+  localStorage.setItem("PP_CONTENT_TYPE", type);
+
+  localStorage.setItem("CUSTOM_POEM", JSON.stringify(_linesData));
+  var btn  = $id("saveBtn");
+  var orig = btn.innerHTML;
+  btn.innerHTML = "✅ Saved! Applied to All Activities.";
+  setTimeout(function () { btn.innerHTML = orig; }, 2500);
+};
+
+// ── Default poem ─────────────────────────────────────────────────
+var DEFAULT_POEM = [
+  { text: "I like free time, I like free time!",                                        targets: { like: "/aɪ/", free: "/i:/", time: "/aɪ/" } },
+  { text: "What do you like to do in your free time?",                                  targets: { like: "/aɪ/", free: "/i:/", time: "/aɪ/" } },
+  { text: "I like to ride, I like to ride,",                                            targets: { like: "/aɪ/", ride: "/aɪ/" } },
+  { text: "I like to ride my bike in my free time!",                                    targets: { like: "/aɪ/", ride: "/aɪ/", bike: "/aɪ/", free: "/i:/", time: "/aɪ/" } },
+  { text: "I like to play, I like to play!",                                            targets: { like: "/aɪ/", play: "/eɪ/" } },
+  { text: "What do you play on a free day?",                                            targets: { play: "/eɪ/", free: "/i:/", day: "/eɪ/" } },
+  { text: "I play games, I play games,",                                                targets: { play: "/eɪ/", games: "/eɪ/" } },
+  { text: "I play fun games on a free day!",                                            targets: { play: "/eɪ/", games: "/eɪ/", free: "/i:/", day: "/eɪ/" } },
+  { text: "I like the playground, I like the playground!",                              targets: { like: "/aɪ/" } },
+  { text: "What do you play for fun and joy?",                                          targets: { play: "/eɪ/", joy: "/ɔɪ/" } },
+  { text: "I play hide and seek, I play hide and seek,",                                targets: { play: "/eɪ/", hide: "/aɪ/", seek: "/i:/" } },
+  { text: "I play with my friends, we call ourselves \"The Boys\"!",                    targets: { play: "/eɪ/", boys: "/ɔɪ/" } },
+  { text: "I like free time, I like free time!",                                        targets: { like: "/aɪ/", free: "/i:/", time: "/aɪ/" } },
+  { text: "What do you like to do in your free time?",                                  targets: { like: "/aɪ/", free: "/i:/", time: "/aɪ/" } },
+  { text: "I hide and seek, I hide and seek,",                                          targets: { hide: "/aɪ/", seek: "/i:/" } },
+  { text: "I like to ride a bike, I like to play games, I like to play hide and seek in my free time!", targets: { like: "/aɪ/", ride: "/aɪ/", bike: "/aɪ/", play: "/eɪ/", games: "/eɪ/", hide: "/aɪ/", seek: "/i:/", free: "/i:/", time: "/aɪ/" } },
+];
+
+// ── Init ─────────────────────────────────────────────────────────
+window.onload = function () {
+  // Load settings and names
+  var savedTeacher = sessionStorage.getItem("PP_TEACHER_NAME") || "";
+  var savedClass   = sessionStorage.getItem("PP_CLASS_NAME") || "";
+  var savedStudent = sessionStorage.getItem("PP_STUDENT_NAME") || "";
+  var savedGSheet  = localStorage.getItem("PP_GSHEET_URL") || "";
+  var savedTitle   = localStorage.getItem("PP_LESSON_TITLE") || "My Free Time";
+  var savedType    = localStorage.getItem("PP_CONTENT_TYPE") || "poem";
+  var savedGemini  = localStorage.getItem("PP_GEMINI_API_KEY") || "";
+
+  $id("teacherName").value = savedTeacher;
+  $id("studentName").value = savedStudent;
+  $id("gsheetUrl").value   = savedGSheet;
+  $id("geminiApiKey").value = savedGemini;
+  $id("lessonTitle").value = savedTitle;
+  $id("contentType").value = savedType;
+
+  // Initialize Class Dropdown
+  var classes = [];
+  try {
+    classes = JSON.parse(localStorage.getItem("PP_CLASSES_LIST")) || [];
+  } catch(e) {}
+  rebuildClassDropdown(classes, savedClass);
+
+  $id("className").onchange = function() {
+    if (this.value === "__NEW__") {
+      var rawInput = prompt("Enter new class name:");
+      var newClass = rawInput ? rawInput.trim() : "";
+      if (newClass) {
+        if (classes.indexOf(newClass) === -1) {
+          classes.push(newClass);
+          classes.sort();
+          localStorage.setItem("PP_CLASSES_LIST", JSON.stringify(classes));
+        }
+        rebuildClassDropdown(classes, newClass);
+      } else {
+        this.value = sessionStorage.getItem("PP_CLASS_NAME") || "";
+      }
+    }
+  };
+
+  function rebuildClassDropdown(list, selectedVal) {
+    var select = $id("className");
+    // Clear dynamic options
+    select.innerHTML = '<option value="" disabled>Select Class</option><option value="__NEW__">+ Add New Class...</option>';
+    for (var idx = 0; idx < list.length; idx++) {
+      var opt = document.createElement("option");
+      opt.value = list[idx];
+      opt.textContent = list[idx];
+      // Insert before the "+ Add New Class..." option
+      select.insertBefore(opt, select.lastElementChild);
+    }
+    if (selectedVal && list.indexOf(selectedVal) !== -1) {
+      select.value = selectedVal;
+    } else {
+      select.value = "";
+    }
+  }
+
+  updateLoginStatus();
+
+  $id("loginBtn").onclick = function () {
+    var tName = $id("teacherName").value.trim();
+    var cName = $id("className").value || "";
+    var sName = $id("studentName").value.trim();
+
+    if (cName === "__NEW__") cName = "";
+
+    sessionStorage.setItem("PP_TEACHER_NAME", tName);
+    sessionStorage.setItem("PP_CLASS_NAME", cName);
+    sessionStorage.setItem("PP_STUDENT_NAME", sName);
+
+    var gsUrl = $id("gsheetUrl").value.trim();
+    if (gsUrl) localStorage.setItem("PP_GSHEET_URL", gsUrl);
+    else localStorage.removeItem("PP_GSHEET_URL");
+
+    var gemKey = $id("geminiApiKey").value.trim();
+    if (gemKey) localStorage.setItem("PP_GEMINI_API_KEY", gemKey);
+    else localStorage.removeItem("PP_GEMINI_API_KEY");
+
+    updateLoginStatus();
+    alert("Classroom settings saved successfully!");
+  };
+
+  function updateLoginStatus() {
+    var t = sessionStorage.getItem("PP_TEACHER_NAME") || "";
+    var c = sessionStorage.getItem("PP_CLASS_NAME") || "";
+    var s = sessionStorage.getItem("PP_STUDENT_NAME") || "";
+    if (t && c && s) {
+      $id("loginStatus").textContent = "👩‍🏫 " + t + "  |  🏫 " + c + "  |  👤 " + s;
+      $id("loginStatus").style.opacity = "0.8";
+      $id("loginStatus").style.color = "#2ec4b6";
+    } else {
+      $id("loginStatus").textContent = "Set Teacher, Class, and Student to enable tracking";
+      $id("loginStatus").style.opacity = "0.35";
+      $id("loginStatus").style.color = "";
+    }
+  }
+
+  var existing = localStorage.getItem("CUSTOM_POEM");
+  if (!existing) {
+    existing = JSON.stringify(DEFAULT_POEM);
+    localStorage.setItem("CUSTOM_POEM", existing);
+  }
+  try {
+    _linesData = JSON.parse(existing);
+    if (!Array.isArray(_linesData) || _linesData.length === 0) throw new Error("empty");
+    $id("rawInput").value = _linesData.map(function (ld) { return ld.text; }).join("\n");
+    renderBuilder();
+    $id("saveBtn").style.display = "block";
+  } catch (e) {
+    // Corrupt data — reset to default
+    _linesData = DEFAULT_POEM.map(function (d) {
+      return { text: d.text, targets: Object.assign({}, d.targets) };
+    });
+    localStorage.setItem("CUSTOM_POEM", JSON.stringify(_linesData));
+    $id("rawInput").value = _linesData.map(function (ld) { return ld.text; }).join("\n");
+    renderBuilder();
+    $id("saveBtn").style.display = "block";
+  }
+};
+</script>
+
+</body>
+</html>
