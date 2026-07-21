@@ -11,17 +11,12 @@
 
 /* ── ACOUSTIC PHONETIC DICTIONARY MAP ───────────────────────── */
 
-/**
- * A lightweight client-side phonetic dictionary map specifically built
- * to handle homophones, irregular spellings, and edge cases (like "choir")
- * that literal grapheme regex heuristics fail to catch.
- */
 var PHONETIC_EXCEPTIONS = {
   "choir": ["/k/", "/aɪ/"],
   "quire": ["/k/", "/aɪ/"],
   "weigh": ["/w/", "/eɪ/"],
   "way": ["/w/", "/eɪ/"],
-  "read": ["/r/", "/i:/"], // Base present tense assumed for early learners
+  "read": ["/r/", "/i:/"],
   "red": ["/r/", "/e/"],
   "two": ["/t/", "/u:/"],
   "too": ["/t/", "/u:/"],
@@ -43,11 +38,6 @@ var PHONETIC_EXCEPTIONS = {
   "see": ["/s/", "/i:/"]
 };
 
-/**
- * Computes a stripped-down Double Metaphone-style consonant skeleton.
- * Used exclusively to evaluate acoustic similarity for Levenshtein distance,
- * intentionally ignoring vowels so homophones match closely.
- */
 function getAcousticSkeleton(word) {
   if (!word) return "";
   var w = word.toUpperCase().replace(/[^A-Z]/g, "");
@@ -139,10 +129,12 @@ function censor(raw) {
 
 /**
  * Compute edit distance between two strings.
+ * Used by Poem Builder for fuzzy matching of spoken words.
  */
 function levenshtein(a, b) {
   var m = a.length;
   var n = b.length;
+  // Use a flat typed array for speed
   var dp = new Uint16Array((m + 1) * (n + 1));
   for (var i = 0; i <= m; i++) dp[i * (n + 1)]     = i;
   for (var j = 0; j <= n; j++) dp[j]                = j;
@@ -159,14 +151,9 @@ function levenshtein(a, b) {
   return dp[m * (n + 1) + n];
 }
 
-/**
- * Computes Levenshtein distance based on acoustic consonant skeletons,
- * ignoring vowels and evaluating homophones equally.
- */
 function phoneticLevenshtein(rawA, rawB) {
   var a = getAcousticSkeleton(rawA);
   var b = getAcousticSkeleton(rawB);
-
   if (!a || !b) {
     a = rawA.toUpperCase();
     b = rawB.toUpperCase();
@@ -371,8 +358,8 @@ function loadLessonData() {
 
 /**
  * Check if a word CONTAINS the sound represented by an IPA phoneme.
- * Overhauled to check a phonetic dictionary map for homophones/exceptions
- * before falling back to the precise regex heuristics.
+ * Uses grapheme matching — checks if any spelling pattern for the
+ * phoneme appears within the word using precise regex heuristics.
  */
 function wordHasPhoneme(word, ipa) {
   word = word.toLowerCase().trim().replace(/[^\w]/g, "");
@@ -392,19 +379,15 @@ function wordHasPhoneme(word, ipa) {
     }
   } catch (e) {}
 
+  // 2. Fallback to rule-based heuristics
   var normIpa = ipa.replace("ː", ":"); 
 
-  // 2. Dictionary Acoustic Exception Check
   if (typeof PHONETIC_EXCEPTIONS !== "undefined" && PHONETIC_EXCEPTIONS[word]) {
     var sounds = PHONETIC_EXCEPTIONS[word];
     if (sounds.indexOf(normIpa) !== -1) return true;
-
-    // Strict block: if a word is in the dictionary, DO NOT fall through to the regex heuristics
-    // This prevents "choir" from matching /ɔɪ/ (oi) just because it has "oi" in the spelling.
     return false;
   }
 
-  // 3. Fallback to rule-based heuristics
   switch (normIpa) {
     case "/eɪ/":
       return /ays?$|ai[a-z]|eigh|ey$/.test(word) ||

@@ -205,7 +205,7 @@ a.card:hover, .grid .card:hover {
 
 /* ── BUBBLY SOUND TOGGLE BUTTON ────────────────────────────── */
 .sound-btn {
-  position: absolute; top: 2rem; left: 2.5rem; z-index: 500;
+  position: absolute; top: 2rem; right: 2.5rem; left: auto; z-index: 500;
   width: 2.8rem; height: 2.8rem; border-radius: 50%;
   background: #ffd166; border: 3px solid #1e293b;
   color: #1e293b; font-size: 1.15rem; font-weight: 900;

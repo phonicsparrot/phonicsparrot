@@ -475,7 +475,7 @@ function processVoice(raw) {
   for (var wi = 0; wi < words.length; wi++) {
     var w = words[wi];
     
-    // Fuzzy matching against target words (acoustically via phoneticLevenshtein)
+    // Fuzzy matching against target words
     var matchedTarget = null;
     for (var ti = 0; ti < phoneme.words.length; ti++) {
       var target = phoneme.words[ti];
@@ -631,26 +631,6 @@ function registerScore(scorer) {
   D["sc" + scorer].textContent = pd.score;
   PhonicsAudio.playSuccess();
 
-  // Log missed paddle performance
-  if (scorer === 2 && cfg.p1) {
-    logPerformance({
-      activity: "pingpong",
-      target: cfg.p1.label,
-      phoneme: cfg.p1.label,
-      spoken: "",
-      score: 0,
-      verdict: "incorrect"
-    });
-  } else if (scorer === 1 && cfg.p2) {
-    logPerformance({
-      activity: "pingpong",
-      target: cfg.p2.label,
-      phoneme: cfg.p2.label,
-      spoken: "",
-      score: 0,
-      verdict: "incorrect"
-    });
-  }
 
   if (pd1.score >= WIN_SCORE || pd2.score >= WIN_SCORE) { setTimeout(endGame, 900); return; }
 
@@ -689,7 +669,6 @@ function registerScore(scorer) {
       if (isMatch) {
         var matchWord = matchedTarget || w;
         usedMap[matchWord] = true;
-        logPerformance({ activity: "pingpong", target: loserPhoneme.label, phoneme: loserPhoneme.label, spoken: matchWord, score: 100, verdict: "correct" });
         // Restart — ball heads toward the loser's side (they serve)
         ball = makeBall(loser === 1 ? 1 : -1);
         loserPd.solid = true;
