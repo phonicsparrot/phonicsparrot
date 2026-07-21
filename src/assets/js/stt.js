@@ -32,6 +32,10 @@ var PhonicsSTT = (function () {
     this.onError   = options.onError   || function () {};
 
     this._recordAudio = options.recordAudio !== false;
+
+    if (window.location && window.location.pathname.indexOf("pingpong") >= 0) {
+      this._recordAudio = false;
+    }
     this.onRecording  = options.onRecording || function (blob, phrase) {
       if (typeof saveRecording === "function") {
         var activityName = "activity";

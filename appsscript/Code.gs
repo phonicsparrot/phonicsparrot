@@ -1,21 +1,13 @@
 /**
- * Phonics Parrot — Google Apps Script Web App  v2.5
+ * Phonics Parrot — Google Apps Script Web App
  * ============================================================
  * Scoped strictly to My Drive Root of the script/sheet owner.
  * Ensures uploaded audio files are owned by the Apps Script owner,
  * and patches Google Drive links cleanly into Google Sheets.
- *
- * Deploy as Web App:
- *   Extensions → Apps Script → Deploy → New deployment
- *   Execute as: Me  |  Who has access: Anyone
  */
-
-// ── CONFIG ────────────────────────────────────────────────────────────────────
 
 var SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID_HERE/edit";
 var RECORDINGS_FOLDER_NAME = "Phonics Parrot Recordings";
-
-// ── COLUMN MAP (1-indexed) ────────────────────────────────────────────────────
 
 var COL = {
   TIMESTAMP : 1,
@@ -29,8 +21,6 @@ var COL = {
   RECORDING : 9
 };
 var TOTAL_COLS = 9;
-
-// ── SPREADSHEET RESOLVER ──────────────────────────────────────────────────────
 
 function getSpreadsheet(data) {
   if (data && data.spreadsheetUrl) {
@@ -46,11 +36,9 @@ function getSpreadsheet(data) {
   throw new Error("Spreadsheet not configured. Open script inside Google Sheet or set SPREADSHEET_URL in Code.gs");
 }
 
-// ── ENTRY POINT ───────────────────────────────────────────────────────────────
-
 function doGet() {
   return ContentService
-    .createTextOutput(JSON.stringify({ status: "ok", app: "Phonics Parrot v2.5" }))
+    .createTextOutput(JSON.stringify({ status: "ok", app: "Phonics Parrot Web App" }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -61,10 +49,22 @@ function doPost(e) {
 
   var lock = LockService.getScriptLock();
   var locked = false;
-  try {
-    lock.waitLock(10000);
-    locked = true;
-  } catch (_) {
+  var attempts = 0;
+  var maxAttempts = 3;
+
+  while (!locked && attempts < maxAttempts) {
+    try {
+      lock.waitLock(5000);
+      locked = true;
+    } catch (_) {
+      attempts++;
+      if (attempts < maxAttempts) {
+        Utilities.sleep(Math.pow(2, attempts) * 1000);
+      }
+    }
+  }
+
+  if (!locked) {
     return respond({ result: "error", message: "System busy, please try again." });
   }
 
@@ -76,43 +76,51 @@ function doPost(e) {
       return respond({ result: "error", message: "Invalid JSON payload." });
     }
 
+    var driveUrl = "";
+    var hasPerfData = ("spoken" in data) || ("score" in data) || ("target" in data);
+
+    // 1. If audioData is provided, upload it to Drive immediately.
     if (data.audioData) {
       if (!/^[A-Za-z0-9+/=]+$/.test(data.audioData)) {
         return respond({ result: "error", message: "Invalid or missing audioData format." });
       }
-      if (data.audioData.length > 30 * 1024 * 1024) {
-        return respond({ result: "error", message: "Audio file too large." });
+      try {
+        driveUrl = saveAudioToDrive(data);
+      } catch (err) {
+        Logger.log("Drive Upload Error: " + err.toString());
+      }
+
+      // Store the URL in cache for the subsequent log request (since they are sent separately)
+      if (driveUrl && !hasPerfData) {
+        var cacheKey = getCacheKey(data);
+        try { CacheService.getScriptCache().put(cacheKey, driveUrl, 21600); } catch (_) {}
+        try { PropertiesService.getScriptProperties().setProperty(cacheKey, driveUrl); } catch (_) {}
+
+        // Attempt to patch previous row if log arrived first
+        var patchStatus = patchLastRowDriveUrl(data.class, data.student, driveUrl, data);
+        SpreadsheetApp.flush();
+        return respond({ result: "success", driveUrl: driveUrl, status: "audio_only", patchStatus: patchStatus });
       }
     }
 
-    var hasPerfData = ("spoken" in data) || ("score" in data) || ("target" in data);
+    // 2. If it's a combined payload, use the driveUrl we just generated.
+    if (hasPerfData) {
+      if (!driveUrl) {
+        // If it's just a log request, try to retrieve the URL from cache
+        var cacheKey = getCacheKey(data);
+        try { driveUrl = CacheService.getScriptCache().get(cacheKey) || ""; } catch (_) {}
+        if (!driveUrl) {
+          try { driveUrl = PropertiesService.getScriptProperties().getProperty(cacheKey) || ""; } catch (_) {}
+        }
+      }
 
-    // Atomic combined request: audioData + log performance info
-    if (data.audioData && hasPerfData) {
-      var driveUrl = saveAudioToDrive(data);
       data.driveUrl = driveUrl;
       logToSheet(data);
       SpreadsheetApp.flush();
-      return respond({ result: "success", driveUrl: driveUrl, status: "logged_and_linked" });
+      return respond({ result: "success", driveUrl: driveUrl, status: "logged" });
     }
 
-    // Audio-only upload request
-    if (data.audioData) {
-      var driveUrl = saveAudioToDrive(data);
-      var cacheKey = getCacheKey(data);
-      
-      try { CacheService.getScriptCache().put(cacheKey, driveUrl, 21600); } catch (_) {}
-      try { PropertiesService.getScriptProperties().setProperty(cacheKey, driveUrl); } catch (_) {}
-
-      var patchStatus = patchLastRowDriveUrl(data.class, data.student, driveUrl, data);
-      SpreadsheetApp.flush();
-      return respond({ result: "success", driveUrl: driveUrl, patchStatus: patchStatus });
-    }
-
-    // Performance log request
-    logToSheet(data);
-    SpreadsheetApp.flush();
-    return respond({ result: "success" });
+    return respond({ result: "success", status: "noop" });
 
   } catch (err) {
     return respond({ result: "error", message: err.toString() });
@@ -135,14 +143,11 @@ function getCacheKey(data) {
   return "pp_rec_" + c + "_" + s + (t ? "_" + t : "");
 }
 
-// ── GOOGLE DRIVE UPLOAD ───────────────────────────────────────────────────────
-
 function saveAudioToDrive(data) {
   var audioBytes  = Utilities.base64Decode(data.audioData);
   var filename    = data.filename || ((data.student || "guest") + "_recording.webm");
   var blob        = Utilities.newBlob(audioBytes, "audio/webm", filename);
 
-  // Scope strictly to My Drive Root of the script/sheet owner
   var myDrive     = DriveApp.getRootFolder();
   var props       = PropertiesService.getScriptProperties();
   var folderId    = props.getProperty("PP_RECORDINGS_FOLDER_ID");
@@ -156,9 +161,9 @@ function saveAudioToDrive(data) {
     props.setProperty("PP_RECORDINGS_FOLDER_ID", rootFolder.getId());
   }
 
-  var className   = (data.class    || "Guest").trim().replace(/[\/\\:*?"<>|]/g, "_");
-  var studentName = (data.student  || "Guest").trim().replace(/[\/\\:*?"<>|]/g, "_");
-  var activity    = (data.activity || "activity").trim().replace(/[\/\\:*?"<>|]/g, "_");
+  var className   = (data.class    || "Guest").trim().replace(/[/\:*?"<>|]/g, "_");
+  var studentName = (data.student  || "Guest").trim().replace(/[/\:*?"<>|]/g, "_");
+  var activity    = (data.activity || "activity").trim().replace(/[/\:*?"<>|]/g, "_");
 
   var classFolder   = getOrCreateSubfolder(rootFolder, className);
   var studentFolder = getOrCreateSubfolder(classFolder, studentName);
@@ -180,15 +185,12 @@ function getOrCreateSubfolder(parent, name) {
   return iter.hasNext() ? iter.next() : parent.createFolder(name);
 }
 
-// ── PATCH DRIVE URL INTO EXISTING ROW (MULTI-TAB RESILIENT) ───────────────────
-
 function patchLastRowDriveUrl(className, studentName, driveUrl, data) {
   if (!driveUrl) return "No driveUrl provided";
   try {
     var ss = getSpreadsheet(data);
     var targetStudent = (studentName || "").trim().toLowerCase();
 
-    // 1. Try specified class tab first
     if (className) {
       var safeName = className.trim().replace(/[\\\/\?\*\[\]:]/g, "_").substring(0, 100);
       var sheet = ss.getSheetByName(safeName);
@@ -197,7 +199,6 @@ function patchLastRowDriveUrl(className, studentName, driveUrl, data) {
       }
     }
 
-    // 2. Fallback: Search all sheets in workbook
     var sheets = ss.getSheets();
     for (var s = 0; s < sheets.length; s++) {
       if (patchSheetRow(sheets[s], targetStudent, driveUrl)) {
@@ -235,22 +236,6 @@ function patchSheetRow(sheet, targetStudent, driveUrl) {
   return false;
 }
 
-function writeRecordingCell(cell, driveUrl) {
-  try {
-    cell.setRichTextValue(
-      SpreadsheetApp.newRichTextValue()
-        .setText("🎙 Listen")
-        .setLinkUrl(driveUrl)
-        .build()
-    );
-  } catch (e) {
-    cell.setValue(driveUrl);
-  }
-  cell.setFontColor("#1155CC").setFontWeight("bold").setHorizontalAlignment("center");
-}
-
-// ── GOOGLE SHEETS LOGGING ─────────────────────────────────────────────────────
-
 function logToSheet(data) {
   var ss      = getSpreadsheet(data);
   var tabName = (data.class || data.teacher || "Guest")
@@ -267,19 +252,6 @@ function logToSheet(data) {
   var score   = (data.score !== undefined && data.score !== "") ? Number(data.score) : "";
   var verdict = data.verdict || getVerdict(score);
 
-  var cacheKey = getCacheKey(data);
-  var driveUrl = data.driveUrl || "";
-
-  if (!driveUrl) {
-    try { driveUrl = CacheService.getScriptCache().get(cacheKey) || ""; } catch (_) {}
-  }
-  if (!driveUrl) {
-    try {
-      var props = PropertiesService.getScriptProperties();
-      driveUrl = props.getProperty(cacheKey) || "";
-    } catch (_) {}
-  }
-
   sheet.appendRow([
     data.timestamp || new Date().toISOString(),
     data.student   || "Guest",
@@ -294,9 +266,9 @@ function logToSheet(data) {
 
   var newRow = sheet.getLastRow();
 
-  if (driveUrl) {
+  if (data.driveUrl) {
     var recCell = sheet.getRange(newRow, COL.RECORDING);
-    writeRecordingCell(recCell, driveUrl);
+    writeRecordingCell(recCell, data.driveUrl);
   }
 
   if (score !== "") {
@@ -312,6 +284,20 @@ function logToSheet(data) {
   }
 
   sheet.getRange(newRow, COL.SPOKEN).setWrap(true);
+}
+
+function writeRecordingCell(cell, driveUrl) {
+  try {
+    cell.setRichTextValue(
+      SpreadsheetApp.newRichTextValue()
+        .setText("🎙 Listen")
+        .setLinkUrl(driveUrl)
+        .build()
+    );
+  } catch (e) {
+    cell.setValue(driveUrl);
+  }
+  cell.setFontColor("#1155CC").setFontWeight("bold").setHorizontalAlignment("center");
 }
 
 function formatActivity(activity) {
@@ -351,8 +337,6 @@ function colorVerdictCell(cell, score) {
     cell.setBackground("#FFEBEE").setFontColor("#C62828");
   }
 }
-
-// ── CLASS SHEET SETUP ─────────────────────────────────────────────────────────
 
 function setupClassSheet(sheet, className) {
   sheet.insertRowBefore(1);
