@@ -955,3 +955,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+
+/* ── COLOR UTILS ────────────────────────────────────────── */
+function hexToRgb(h) {
+  var n = parseInt(h.slice(1), 16);
+  return ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255);
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    hexToRgb: hexToRgb
+  };
+}
