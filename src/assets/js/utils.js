@@ -289,33 +289,6 @@ function checkLessonData() {
   }
 }
 
-/**
- * Display a fullscreen error overlay when no lesson data is loaded.
- * Appends an overlay to scale-root WITHOUT destroying existing layout/navigation.
- */
-function showEmptyLessonError() {
-  var root = document.getElementById("scale-root");
-  if (!root) return;
-  // Don't overwrite existing content — append overlay instead
-  var overlay = document.createElement("div");
-  overlay.id = "empty-lesson-overlay";
-  overlay.style.cssText =
-    "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;" +
-    "justify-content:center;background:rgba(10,10,26,.96);z-index:9999;" +
-    "text-align:center;padding:2rem;border-radius:1.5rem;" +
-    "border:1px solid rgba(255,255,255,.08);";
-  overlay.innerHTML =
-    '<span style="font-size:5rem;animation:parrot-bob 2.5s ease-in-out infinite;">\uD83E\uDD9C</span>' +
-    '<h2 style="color:#e94560;font-size:1.8rem;margin:1rem 0 .5rem;">No Active Lesson</h2>' +
-    '<p style="opacity:.5;font-size:1rem;margin-bottom:1.5rem;max-width:400px;">' +
-      'Please create a lesson and tag phonics words in the Teacher Dashboard before playing.' +
-    '</p>' +
-    '<button class="enable-btn" style="background:#2ec4b6!important;color:#000!important;' +
-      'box-shadow:0 4px 20px rgba(46,196,182,.25)!important;" ' +
-      'onclick="location.href=\'teacher.html\'">Open Dashboard</button>';
-  root.appendChild(overlay);
-}
-
 /* ── DOM HELPER ─────────────────────────────────────────────── */
 
 /** Shortcut for document.getElementById */
