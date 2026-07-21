@@ -361,6 +361,9 @@ function loadLessonData() {
  * Uses grapheme matching — checks if any spelling pattern for the
  * phoneme appears within the word using precise regex heuristics.
  */
+var _cachedPoemRaw = null;
+var _cachedPoem = null;
+
 function wordHasPhoneme(word, ipa) {
   word = word.toLowerCase().trim().replace(/[^\w]/g, "");
   if (!word) return false;
@@ -369,7 +372,11 @@ function wordHasPhoneme(word, ipa) {
   try {
     var raw = localStorage.getItem("CUSTOM_POEM");
     if (raw) {
-      var poem = JSON.parse(raw);
+      if (raw !== _cachedPoemRaw) {
+        _cachedPoem = JSON.parse(raw);
+        _cachedPoemRaw = raw;
+      }
+      var poem = _cachedPoem;
       for (var i = 0; i < poem.length; i++) {
         var targets = poem[i].targets || {};
         if (targets[word] === ipa) {
