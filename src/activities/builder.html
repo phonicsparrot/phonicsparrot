@@ -639,7 +639,7 @@ if (allCards.length === 0) {
       elResWord.className    = "res-word shake";
       elWord.classList.add("shake");
       // BUG FIX: was `censored(heard)` — censored is an object, not a function. Use censor().
-      elVerdict.textContent  = (wasCensored || heard.indexOf("Squawk") >= 0)
+      elVerdict.textContent  = (censor(heard).dirty || heard.indexOf("Squawk") >= 0)
         ? "🙊 Naughty!"
         : "🔄 Try again";
       elVerdict.className    = "verdict no show";
