@@ -244,7 +244,7 @@ function safeSpeak(text, opts) {
 })();
 
 /* ── INTERACTIVE DEBUG FEEDBACK SYSTEM ───────────────────────── */
-(function initDebugFeedback() {
+(function () {
   document.addEventListener("DOMContentLoaded", function () {
     var configUrl = "/api/config";
     if (window.location.pathname.indexOf("activities/") !== -1) {
