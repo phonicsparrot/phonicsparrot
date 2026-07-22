@@ -11,7 +11,7 @@
 
 /* ── ACOUSTIC PHONETIC DICTIONARY MAP ───────────────────────── */
 
-const PHONETIC_EXCEPTIONS = {
+const PHONETIC_EXCEPTIONS = /* eslint-disable-line no-unused-vars */ {
   "choir": ["/k/", "/aɪ/"],
   "quire": ["/k/", "/aɪ/"],
   "weigh": ["/w/", "/eɪ/"],
@@ -99,7 +99,7 @@ const PROFANITY_LIST = [
  * Returns { text, dirty } — dirty is true if any word was censored.
  * Preserves original case of non-censored text.
  */
-function censor(raw) {
+function censor /* eslint-disable-line no-unused-vars */(raw) {
   let text  = (raw || "");
   let lower = text.toLowerCase();
   let dirty = false;
@@ -136,10 +136,10 @@ function levenshtein(a, b) {
   const n = b.length;
   // Use a flat typed array for speed
   const dp = new Uint16Array((m + 1) * (n + 1));
-  for (var i = 0; i <= m; i++) dp[i * (n + 1)]     = i;
-  for (var j = 0; j <= n; j++) dp[j]                = j;
-  for (var i = 1; i <= m; i++) {
-    for (var j = 1; j <= n; j++) {
+  for (let i = 0; i <= m; i++) dp[i * (n + 1)]     = i;
+  for (let j = 0; j <= n; j++) dp[j]                = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       dp[i * (n + 1) + j] = Math.min(
         dp[(i - 1) * (n + 1) + j] + 1,
@@ -151,7 +151,7 @@ function levenshtein(a, b) {
   return dp[m * (n + 1) + n];
 }
 
-function phoneticLevenshtein(rawA, rawB) {
+function phoneticLevenshtein /* eslint-disable-line no-unused-vars */(rawA, rawB) {
   let a = getAcousticSkeleton(rawA);
   let b = getAcousticSkeleton(rawB);
   if (!a || !b) {
@@ -181,7 +181,7 @@ if (window.speechSynthesis) {
  * Prefers Google > Natural > Microsoft > exact lang match.
  * Falls back to any English voice, then voices[0].
  */
-function getBestVoice(preferredLang) {
+function getBestVoice /* eslint-disable-line no-unused-vars */(preferredLang) {
   preferredLang = preferredLang || "en-GB";
   // Refresh in case voices loaded after page init
   _loadVoices();
@@ -211,7 +211,7 @@ function getBestVoice(preferredLang) {
  * Properly stops the test stream so the mic indicator light goes off.
  * Calls onSuccess / onError accordingly.
  */
-async function requestMicPermission(onSuccess, onError) {
+async function requestMicPermission /* eslint-disable-line no-unused-vars */(onSuccess, onError) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     // Stop all tracks immediately — we only needed the permission grant
@@ -239,7 +239,7 @@ async function requestMicPermission(onSuccess, onError) {
  * Non-intrusive check: returns true only if permission is already "granted".
  * Does NOT prompt the user.
  */
-async function checkMicPermission() {
+async function checkMicPermission /* eslint-disable-line no-unused-vars */() {
   try {
     if (navigator.permissions && navigator.permissions.query) {
       const result = await navigator.permissions.query({ name: "microphone" });
@@ -257,7 +257,7 @@ async function checkMicPermission() {
  * Generate a deterministic HSL colour from an IPA string.
  * Same IPA → same colour every time.
  */
-function getPhonemeColor(ipa) {
+function getPhonemeColor /* eslint-disable-line no-unused-vars */(ipa) {
   let hash = 0;
   for (let i = 0; i < ipa.length; i++) {
     hash = ipa.charCodeAt(i) + ((hash << 5) - hash);
@@ -272,7 +272,7 @@ function getPhonemeColor(ipa) {
 /**
  * Returns true if CUSTOM_POEM has at least one tagged target word.
  */
-function checkLessonData() {
+function checkLessonData /* eslint-disable-line no-unused-vars */() {
   const raw = localStorage.getItem("CUSTOM_POEM");
   if (!raw) return false;
   try {
@@ -293,7 +293,7 @@ function checkLessonData() {
  * Display a fullscreen error overlay when no lesson data is loaded.
  * Appends an overlay to scale-root WITHOUT destroying existing layout/navigation.
  */
-function showEmptyLessonError() {
+function showEmptyLessonError /* eslint-disable-line no-unused-vars */() {
   const root = document.getElementById("scale-root");
   if (!root) return;
   // Don't overwrite existing content — append overlay instead
@@ -319,7 +319,7 @@ function showEmptyLessonError() {
 /* ── DOM HELPER ─────────────────────────────────────────────── */
 
 /** Shortcut for document.getElementById */
-function $id(id) {
+function $id /* eslint-disable-line no-unused-vars */(id) {
   return document.getElementById(id);
 }
 
@@ -329,7 +329,7 @@ function $id(id) {
  * Schema-validated lesson data loader.
  * All activities MUST use this instead of parsing CUSTOM_POEM directly.
  */
-function loadLessonData() {
+function loadLessonData /* eslint-disable-line no-unused-vars */() {
   try {
     const raw = localStorage.getItem("CUSTOM_POEM");
     if (!raw) return { ok: false, error: "No lesson data stored." };
@@ -337,7 +337,7 @@ function loadLessonData() {
     if (!Array.isArray(data) || data.length === 0) {
       return { ok: false, error: "Lesson data is empty or invalid." };
     }
-    const phonemeSet = {};
+    const phonemes = [];
     for (let i = 0; i < data.length; i++) {
       const line = data[i];
       if (!line || typeof line.text !== "string" || typeof line.targets !== "object") {
@@ -345,10 +345,10 @@ function loadLessonData() {
       }
       const words = Object.keys(line.targets);
       for (let wi = 0; wi < words.length; wi++) {
-        phonemeSet[line.targets[words[wi]]] = true;
+        const p = line.targets[words[wi]]; if (p && phonemes.indexOf(p) === -1) phonemes.push(p);
       }
     }
-    return { ok: true, data: data, phonemes: Object.keys(phonemeSet) };
+    return { ok: true, data: data, phonemes: phonemes };
   } catch (e) {
     return { ok: false, error: "Failed to parse lesson data: " + e.message };
   }
@@ -364,7 +364,7 @@ function loadLessonData() {
 let _cachedPoemRaw = null;
 let _cachedPoem = null;
 
-function wordHasPhoneme(word, ipa) {
+function wordHasPhoneme /* eslint-disable-line no-unused-vars */(word, ipa) {
   word = word.toLowerCase().trim().replace(/[^\w]/g, "");
   if (!word) return false;
   // If the word equals the target sound, count it (e.g. "a" = "a")
@@ -394,7 +394,7 @@ function wordHasPhoneme(word, ipa) {
  * Log a performance event for auto-keying.
  * Saves to Google Sheets (if configured) and local JSON fallback.
  */
-function logPerformance(entry) {
+function logPerformance /* eslint-disable-line no-unused-vars */(entry) {
   entry.teacher = sessionStorage.getItem("PP_TEACHER_NAME") || "guest";
   entry.class = sessionStorage.getItem("PP_CLASS_NAME") || "guest";
   entry.student = sessionStorage.getItem("PP_STUDENT_NAME") || "guest";
@@ -407,12 +407,12 @@ function logPerformance(entry) {
   try {
     const existing = localStorage.getItem("PP_PERFORMANCE_LOG");
     if (existing) log = JSON.parse(existing);
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
   log.push(entry);
   if (log.length > 500) log = log.slice(-500);
   try {
     localStorage.setItem("PP_PERFORMANCE_LOG", JSON.stringify(log));
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
 
   // Save to local performance_log.json file (Tauri or local server)
   const isTauri = typeof window.__TAURI__ !== "undefined";
@@ -589,7 +589,7 @@ async function appendRowToGoogleSheet(spreadsheetId, serviceAccountJson, rowData
  * Save a recorded audio blob with folder structure:
  * recordings/<student>/<YYYY-MM-DD>/<activity>_<timestamp>.webm
  */
-async function saveRecording(blob, activity, phrase) {
+async function saveRecording /* eslint-disable-line no-unused-vars */(blob, activity, phrase) {
   try {
     let className = sessionStorage.getItem("PP_CLASS_NAME") || "guest";
     className = className.trim().replace(/[^a-zA-Z0-9-_]/g, "_");

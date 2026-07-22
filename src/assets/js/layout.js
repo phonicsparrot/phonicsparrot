@@ -21,8 +21,8 @@ function PhonicsLayout(designWidth, designHeight) {
 }
 
 PhonicsLayout.prototype._init = function () {
-  var self = this;
-  var schedule = function () {
+  const self = this;
+  const schedule = function () {
     clearTimeout(self._timer);
     self._timer = setTimeout(function () { self.apply(); }, 80);
   };
@@ -37,12 +37,12 @@ PhonicsLayout.prototype._init = function () {
 };
 
 PhonicsLayout.prototype.apply = function () {
-  var vw = window.innerWidth;
-  var vh = window.innerHeight;
-  var isPortrait = vh > vw;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const isPortrait = vh > vw;
 
-  var rotateMsg = document.getElementById("rotate-msg");
-  var root      = document.getElementById("scale-root");
+  const rotateMsg = document.getElementById("rotate-msg");
+  const root      = document.getElementById("scale-root");
 
   // Landscape lock (only active if rotate-msg element exists)
   if (isPortrait && rotateMsg) {
@@ -63,9 +63,9 @@ PhonicsLayout.prototype.apply = function () {
   // Strategy: fill the LARGER dimension so the background gradient
   // handles any overscan beautifully — zero letterboxing.
   //
-  var designAspect = this._designW / this._designH;
-  var viewAspect   = vw / vh;
-  var scale;
+  const designAspect = this._designW / this._designH;
+  const viewAspect   = vw / vh;
+  let scale;
 
   if (viewAspect >= designAspect) {
     // Screen is WIDER than 16:9 (e.g. 21:9 ultrawide, 32:9)
@@ -108,16 +108,16 @@ PhonicsLayout.prototype.apply = function () {
 /* ── Ambient Motes ──────────────────────────────────────────── */
 
 function initMotes() {
-  var container = document.getElementById("motes");
+  const container = document.getElementById("motes");
   if (!container) return;
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  var frag = document.createDocumentFragment();
-  for (var i = 0; i < 40; i++) {
-    var mote = document.createElement("div");
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < 40; i++) {
+    const mote = document.createElement("div");
     mote.className = "mote";
     mote.style.left              = Math.random() * 100 + "%";
     mote.style.top               = Math.random() * 100 + "%";
-    var size = (Math.random() * 0.12 + 0.08) + "rem";
+    const size = (Math.random() * 0.12 + 0.08) + "rem";
     mote.style.width             = size;
     mote.style.height            = size;
     mote.style.animationDuration = (Math.random() * 18 + 14) + "s";
@@ -129,23 +129,23 @@ function initMotes() {
 
 /* ── TTS Wrapper (Bluetooth-safe) ───────────────────────────── */
 
-function safeSpeak(text, opts) {
+function safeSpeak /* eslint-disable-line no-unused-vars */(text, opts) {
   if (!window.speechSynthesis) {
     if (opts && opts.onend) setTimeout(function () { opts.onend(); }, 0);
     return;
   }
   opts = opts || {};
-  try { window.speechSynthesis.cancel(); } catch (_) {}
-  try { window.speechSynthesis.resume(); } catch (_) {}
+  try { window.speechSynthesis.cancel(); } catch (_) /* eslint-disable-line no-unused-vars */ { /* ignore */ }
+  try { window.speechSynthesis.resume(); } catch (_) /* eslint-disable-line no-unused-vars */ { /* ignore */ }
   setTimeout(function () {
     try {
-      var utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang  = opts.lang  || "en-GB";
       utterance.pitch = opts.pitch !== undefined ? opts.pitch : 1;
       utterance.rate  = opts.rate  !== undefined ? opts.rate  : 1;
       if (opts.voice) utterance.voice = opts.voice;
-      var finished = false;
-      var cleanup = function () {
+      let finished = false;
+      const cleanup = function () {
         if (finished) return;
         finished = true;
         if (opts.onend) opts.onend();
@@ -157,10 +157,10 @@ function safeSpeak(text, opts) {
         if (e.error && e.error !== "interrupted" && opts.onerror) opts.onerror(e);
       };
       window.speechSynthesis.speak(utterance);
-      var resumeId = setInterval(function () {
+      const resumeId = setInterval(function () {
         if (finished) { clearInterval(resumeId); return; }
         if (window.speechSynthesis.paused) {
-          try { window.speechSynthesis.resume(); } catch (_) {}
+          try { window.speechSynthesis.resume(); } catch (_) /* eslint-disable-line no-unused-vars */ { /* ignore */ }
         }
       }, 5000);
     } catch (e) {
@@ -181,11 +181,11 @@ function safeSpeak(text, opts) {
   document.addEventListener("DOMContentLoaded", function () {
     initMotes();
 
-    var sizes       = ["medium", "large", "classroom", "xclassroom"];
-    var sizeToRem   = { medium: "1rem", large: "1.35rem", classroom: "1.7rem", xclassroom: "2.2rem" };
-    var fontScales  = { medium: 1, large: 1.5, classroom: 2.0, xclassroom: 2.8 };
-    var sizeLabels  = { medium: "A", large: "Aa", classroom: "🏫", xclassroom: "🏫+" };
-    var current     = localStorage.getItem("PP_FONT_SIZE") || "large";
+    const sizes       = ["medium", "large", "classroom", "xclassroom"];
+    const sizeToRem   = { medium: "1rem", large: "1.35rem", classroom: "1.7rem", xclassroom: "2.2rem" };
+    const fontScales  = { medium: 1, large: 1.5, classroom: 2.0, xclassroom: 2.8 };
+    const sizeLabels  = { medium: "A", large: "Aa", classroom: "🏫", xclassroom: "🏫+" };
+    let current     = localStorage.getItem("PP_FONT_SIZE") || "large";
 
     if (sizeToRem[current] === undefined) current = "large";
 
@@ -193,7 +193,7 @@ function safeSpeak(text, opts) {
     document.documentElement.style.setProperty("--font-scale", fontScales[current]);
     if (current === "classroom" || current === "xclassroom") document.body.classList.add("classroom-mode");
 
-    var btn = document.createElement("button");
+    const btn = document.createElement("button");
     btn.id = "fontSizeToggle";
     btn.textContent = sizeLabels[current];
     btn.title = "Font: " + current + (current.indexOf("classroom")>=0 ? " (projector)" : "");
@@ -207,7 +207,7 @@ function safeSpeak(text, opts) {
 
 
     btn.onclick = function () {
-      var idx = sizes.indexOf(current);
+      let idx = sizes.indexOf(current);
       idx = (idx + 1) % sizes.length;
       current = sizes[idx];
       document.documentElement.style.fontSize = sizeToRem[current];
@@ -231,14 +231,14 @@ function safeSpeak(text, opts) {
   if (typeof window.__TAURI__ !== "undefined") return;
   if (!("serviceWorker" in navigator)) return;
 
-  var base = window.location.pathname;
-  var swPath;
+  const base = window.location.pathname;
+  let swPath;
   if (base.indexOf("/activities/") !== -1) {
     swPath = base.replace(/\/activities\/.*$/, "/sw.js");
   } else {
     swPath = base.replace(/\/[^/]*$/, "/sw.js");
   }
-  navigator.serviceWorker.register(swPath).catch(function (err) {
+  navigator.serviceWorker.register(swPath).catch(function (err) /* eslint-disable-line no-unused-vars */ {
     // Ignore in dev — SW only works on HTTPS/production
   });
 })();
@@ -246,7 +246,7 @@ function safeSpeak(text, opts) {
 /* ── INTERACTIVE DEBUG FEEDBACK SYSTEM ───────────────────────── */
 (function initDebugFeedback() {
   document.addEventListener("DOMContentLoaded", function () {
-    var configUrl = "/api/config";
+    let configUrl = "/api/config";
     if (window.location.pathname.indexOf("activities/") !== -1) {
       configUrl = "../api/config";
     }
@@ -261,12 +261,12 @@ function safeSpeak(text, opts) {
   });
 
   function runDebugSetup() {
-    var isDebugUrl = window.location.search.indexOf("debug=true") !== -1;
-    var isDebugStorage = localStorage.getItem("PP_DEBUG") === "true";
+    const isDebugUrl = window.location.search.indexOf("debug=true") !== -1;
+    const isDebugStorage = localStorage.getItem("PP_DEBUG") === "true";
     if (!isDebugUrl && !isDebugStorage) return;
 
     // 1. Inject styles
-    var css = "\
+    const css = "\
       .debug-toggle-btn {\
         position: fixed; bottom: 0.8rem; left: 0.8rem; z-index: 99999;\
         font-size: 0.9rem; padding: 0.45rem 0.8rem; background: #ffebee;\
@@ -350,24 +350,24 @@ function safeSpeak(text, opts) {
       .debug-comment-btn.save { background: #2ec4b6; color: #fff; }\
       .debug-comment-btn.cancel { background: #ffebee; color: #e94560; }\
     ";
-    var style = document.createElement("style");
+    const style = document.createElement("style");
     style.textContent = css;
     document.head.appendChild(style);
 
     // 2. Add Floating Toggle Button
-    var toggleBtn = document.createElement("button");
+    const toggleBtn = document.createElement("button");
     toggleBtn.className = "debug-toggle-btn";
     toggleBtn.innerHTML = "🐞 Debug Mode: OFF";
     document.body.appendChild(toggleBtn);
 
     // 3. Add Banner Overlay
-    var banner = document.createElement("div");
+    const banner = document.createElement("div");
     banner.className = "debug-banner";
     banner.textContent = "🐞 DEBUG ACTIVE — RIGHT-CLICK ANYWHERE TO COMMENT";
     document.body.appendChild(banner);
 
     // 4. Add Comment Modal Markup
-    var modal = document.createElement("div");
+    const modal = document.createElement("div");
     modal.className = "debug-comment-modal";
     modal.innerHTML = '\
       <div class="debug-comment-card">\
@@ -382,10 +382,10 @@ function safeSpeak(text, opts) {
     ';
     document.body.appendChild(modal);
 
-    var cancelBtn = document.getElementById("debug-cancel-btn");
-    var saveBtn = document.getElementById("debug-save-btn");
-    var textInput = document.getElementById("debug-comment-text");
-    var coordsLabel = document.getElementById("debug-coords-label");
+    const cancelBtn = document.getElementById("debug-cancel-btn");
+    const saveBtn = document.getElementById("debug-save-btn");
+    const textInput = document.getElementById("debug-comment-text");
+    const coordsLabel = document.getElementById("debug-coords-label");
 
     // Prevent typing from bubbling up to activate global page shortcuts (e.g. Space to Record)
     textInput.addEventListener("keydown", function (e) {
@@ -402,8 +402,8 @@ function safeSpeak(text, opts) {
       e.stopPropagation();
     });
 
-    var activeCoords = null;
-    var debugActive = sessionStorage.getItem("debug_feedback_active") === "true";
+    let activeCoords = null;
+    let debugActive = sessionStorage.getItem("debug_feedback_active") === "true";
 
     function updateState() {
       toggleBtn.classList.toggle("active", debugActive);
@@ -428,11 +428,11 @@ function safeSpeak(text, opts) {
       if (!debugActive) return;
       e.preventDefault();
 
-      var scaleRoot = document.getElementById("scale-root");
-      var x, y;
+      const scaleRoot = document.getElementById("scale-root");
+      let x, y;
       if (scaleRoot) {
-        var rect = scaleRoot.getBoundingClientRect();
-        var zoom = parseFloat(document.documentElement.style.getPropertyValue("--app-zoom")) || 1;
+        const rect = scaleRoot.getBoundingClientRect();
+        const zoom = parseFloat(document.documentElement.style.getPropertyValue("--app-zoom")) || 1;
         x = Math.round((e.clientX - rect.left) / zoom);
         y = Math.round((e.clientY - rect.top) / zoom);
       } else {
@@ -454,10 +454,10 @@ function safeSpeak(text, opts) {
     };
 
     saveBtn.onclick = function () {
-      var text = textInput.value.trim();
+      const text = textInput.value.trim();
       if (!text || !activeCoords) return;
 
-      var commentData = {
+      const commentData = {
         page: getPageName(),
         x: activeCoords.x,
         y: activeCoords.y,
@@ -465,7 +465,7 @@ function safeSpeak(text, opts) {
         timestamp: new Date().toISOString()
       };
 
-      var saveUrl = "/api/save-comment";
+      let saveUrl = "/api/save-comment";
       // Handle activity pages sub-directory
       if (getPageName().indexOf("activities/") !== -1) {
         saveUrl = "../api/save-comment";
@@ -484,15 +484,15 @@ function safeSpeak(text, opts) {
           loadPins();
         }
       })
-      .catch(function (err) {
+      .catch(function (err) /* eslint-disable-line no-unused-vars */ {
         alert("Failed to save comment: " + err.message);
       });
     };
 
     function getPageName() {
-      var path = window.location.pathname;
-      var parts = path.split("/");
-      var file = parts[parts.length - 1] || "index.html";
+      const path = window.location.pathname;
+      const parts = path.split("/");
+      const file = parts[parts.length - 1] || "index.html";
       if (path.indexOf("/activities/") !== -1) {
         return "activities/" + file;
       }
@@ -500,19 +500,19 @@ function safeSpeak(text, opts) {
     }
 
     function clearPins() {
-      var pins = document.querySelectorAll(".debug-pin");
-      for (var i = 0; i < pins.length; i++) {
+      const pins = document.querySelectorAll(".debug-pin");
+      for (let i = 0; i < pins.length; i++) {
         pins[i].parentNode.removeChild(pins[i]);
       }
     }
 
     function loadPins() {
       clearPins();
-      var scaleRoot = document.getElementById("scale-root");
-      var parent = scaleRoot || document.body;
+      const scaleRoot = document.getElementById("scale-root");
+      const parent = scaleRoot || document.body;
       if (!parent) return;
 
-      var fetchUrl = "/debug_comments.json";
+      let fetchUrl = "/debug_comments.json";
       if (getPageName().indexOf("activities/") !== -1) {
         fetchUrl = "../debug_comments.json";
       }
@@ -521,26 +521,26 @@ function safeSpeak(text, opts) {
         .then(function (res) { return res.json(); })
         .then(function (comments) {
           if (!Array.isArray(comments)) return;
-          var currentPage = getPageName();
-          var count = 1;
-          for (var i = 0; i < comments.length; i++) {
-            var c = comments[i];
+          const currentPage = getPageName();
+          let count = 1;
+          for (let i = 0; i < comments.length; i++) {
+            const c = comments[i];
             if (c.page === currentPage) {
               createPin(parent, c, count++);
             }
           }
         })
-        .catch(function (_) {});
+        .catch(function (_) /* eslint-disable-line no-unused-vars */ {});
     }
 
     function createPin(parent, commentObj, index) {
-      var pin = document.createElement("div");
+      const pin = document.createElement("div");
       pin.className = "debug-pin";
       pin.style.left = commentObj.x + "px";
       pin.style.top = commentObj.y + "px";
       pin.innerHTML = "📍";
 
-      var tooltip = document.createElement("div");
+      const tooltip = document.createElement("div");
       tooltip.className = "debug-pin-tooltip";
       tooltip.innerHTML = "<strong>Comment #" + index + "</strong><br>" + escapeHTML(commentObj.comment);
       pin.appendChild(tooltip);
@@ -554,10 +554,10 @@ function safeSpeak(text, opts) {
 
     // Force SVG animations to reload on DOM load (fixes Chrome SVG caching freeze bug)
     (function () {
-      var images = document.querySelectorAll("img");
-      var buster = "?cb=" + Date.now();
-      for (var i = 0; i < images.length; i++) {
-        var src = images[i].getAttribute("src");
+      const images = document.querySelectorAll("img");
+      const buster = "?cb=" + Date.now();
+      for (let i = 0; i < images.length; i++) {
+        const src = images[i].getAttribute("src");
         if (src && (src.indexOf("poster.svg") !== -1 || src.indexOf("plant_decor.svg") !== -1)) {
           images[i].setAttribute("src", src.split("?")[0] + buster);
         }

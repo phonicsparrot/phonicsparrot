@@ -20,7 +20,7 @@ if (!APPS_SCRIPT_URL && fs.existsSync(DRIVE_CONFIG_PATH)) {
   try {
     const cfg = JSON.parse(fs.readFileSync(DRIVE_CONFIG_PATH, "utf8"));
     APPS_SCRIPT_URL = cfg.appsScriptUrl || "";
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
 }
 
 const MIME = {
@@ -125,7 +125,7 @@ const server = http.createServer((req, res) => {
       const className = (parsedUrl.searchParams.get("class") || "guest").replace(/[^a-zA-Z0-9-_]/g, "_");
       const student = (parsedUrl.searchParams.get("student") || "guest").replace(/[^a-zA-Z0-9-_]/g, "_");
       const activity = (parsedUrl.searchParams.get("activity") || "activity").replace(/[^a-zA-Z0-9-_]/g, "_");
-      const filename = (parsedUrl.searchParams.get("filename") || "recording.webm").replace(/[^a-zA-Z0-9-_\[\]\.]/g, "_");
+      const filename = (parsedUrl.searchParams.get("filename") || "recording.webm").replace(/[^a-zA-Z0-9-_[\].]/g, "_");
 
       const activityMap = {
         "builder": "flashcard_builder",
@@ -184,8 +184,8 @@ const server = http.createServer((req, res) => {
 
       execFile(ffmpegCmd, ffmpegArgs, (err) => {
         if (err) {
-          try { fs.unlinkSync(tempWebmPath); } catch(_) {}
-          try { fs.unlinkSync(tempWavPath); } catch(_) {}
+          try { fs.unlinkSync(tempWebmPath); } catch(_) { /* ignore */ }
+          try { fs.unlinkSync(tempWavPath); } catch(_) { /* ignore */ }
           res.writeHead(500, { "Content-Type": "application/json", ...HEADERS });
           res.end(JSON.stringify({ ok: false, error: "ffmpeg conversion failed: " + err.message }));
           return;
@@ -195,9 +195,9 @@ const server = http.createServer((req, res) => {
         const modelPath = path.join(__dirname, "bin", "whisper", "ggml-tiny.en.bin");
         const whisperArgs = ["-m", modelPath, "-f", tempWavPath, "--no-timestamps", "--no-prints"];
 
-        execFile(whisperPath, whisperArgs, (err, stdout, stderr) => {
-          try { fs.unlinkSync(tempWebmPath); } catch(_) {}
-          try { fs.unlinkSync(tempWavPath); } catch(_) {}
+        execFile(whisperPath, whisperArgs, (err, stdout) => {
+          try { fs.unlinkSync(tempWebmPath); } catch(_) { /* ignore */ }
+          try { fs.unlinkSync(tempWavPath); } catch(_) { /* ignore */ }
 
           if (err) {
             res.writeHead(500, { "Content-Type": "application/json", ...HEADERS });
@@ -205,7 +205,7 @@ const server = http.createServer((req, res) => {
             return;
           }
 
-          let transcript = stdout.replace(/\[BLANK_AUDIO\]/gi, "").trim();
+          const transcript = stdout.replace(/\[BLANK_AUDIO\]/gi, "").trim();
           res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
           res.end(JSON.stringify({ ok: true, transcript: transcript }));
         });
@@ -213,7 +213,7 @@ const server = http.createServer((req, res) => {
     });
 
     writeStream.on("error", (err) => {
-      try { fs.unlinkSync(tempWebmPath); } catch(_) {}
+      try { fs.unlinkSync(tempWebmPath); } catch(_) { /* ignore */ }
       res.writeHead(500, { "Content-Type": "application/json", ...HEADERS });
       res.end(JSON.stringify({ ok: false, error: "Failed to save temp file: " + err.message }));
     });
@@ -235,7 +235,7 @@ const server = http.createServer((req, res) => {
         const commentsPath = path.join(ROOT, "debug_comments.json");
         let comments = [];
         if (fs.existsSync(commentsPath)) {
-          try { comments = JSON.parse(fs.readFileSync(commentsPath, "utf8")); } catch (_) {}
+          try { comments = JSON.parse(fs.readFileSync(commentsPath, "utf8")); } catch (_) { /* ignore */ }
         }
         comments.push(commentObj);
         fs.writeFileSync(commentsPath, JSON.stringify(comments, null, 2), "utf8");
@@ -330,7 +330,7 @@ const server = http.createServer((req, res) => {
         try {
           const parsed = JSON.parse(body);
           driveUrl = parsed.driveUrl || "";
-        } catch (_) {}
+        } catch (_) { /* ignore */ }
         res.writeHead(200, { "Content-Type": "application/json", ...HEADERS });
         res.end(JSON.stringify({ ok: true, driveUrl: driveUrl, driveResponse: body }));
       });
