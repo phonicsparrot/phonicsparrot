@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const htmlContent = fs.readFileSync(path.join(__dirname, '../activities/pingpong.html'), 'utf-8');
-const match = htmlContent.match(/function clamp\([^\)]*\)\s*{[^}]*}/);
+const match = htmlContent.match(/function clamp\([^)]*\)\s*{[^}]*}/);
 
 if (!match) {
   throw new Error("Could not find clamp function in pingpong.html");

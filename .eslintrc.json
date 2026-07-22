@@ -2,7 +2,7 @@
   "env": {
     "browser": true,
     "es2021": true,
-    "worker": true
+    "worker": true, "node": true, "jest": true
   },
   "extends": "eslint:recommended",
   "parserOptions": {
@@ -19,6 +19,10 @@
     "no-var": "warn"
   },
   "globals": {
+    "safeSpeak": "readonly",
+    "saveRecording": "readonly",
+    "clamp": "readonly",
+    "hexToRgb": "readonly",
     "PhonicsSTT": "readonly",
     "PhonicsSTT_UI": "readonly",
     "PhonicsLayout": "readonly",

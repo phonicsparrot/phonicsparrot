@@ -5,20 +5,20 @@
  */
 
 (function () {
-  var currentPath = window.location.pathname;
-  var audioBase = "assets/audio/";
+  const currentPath = window.location.pathname;
+  let audioBase = "assets/audio/";
   if (currentPath.indexOf("activities/") !== -1) {
     audioBase = "../assets/audio/";
   }
 
   // Persistent mute state (defaults to unmuted, i.e., false)
-  var isMuted = localStorage.getItem("PP_AUDIO_MUTED") === "true";
+  let isMuted = localStorage.getItem("PP_AUDIO_MUTED") === "true";
 
-  var bgmInstance = null;
-  var interactionInitialized = false;
+  let bgmInstance = null;
+  let interactionInitialized = false;
 
   // Heuristics for where BGM should play automatically
-  var isTeacherPage = currentPath.indexOf("teacher") !== -1 || currentPath.indexOf("guide") !== -1;
+  const isTeacherPage = currentPath.indexOf("teacher") !== -1 || currentPath.indexOf("guide") !== -1;
 
   function getBgm() {
     if (!bgmInstance) {
@@ -27,7 +27,7 @@
       bgmInstance.volume = 0.15; // Subtle volume
       
       // Restore playback position from localStorage
-      var savedTime = localStorage.getItem("PP_BGM_TIME");
+      const savedTime = localStorage.getItem("PP_BGM_TIME");
       if (savedTime) {
         bgmInstance.currentTime = parseFloat(savedTime);
       }
@@ -42,7 +42,7 @@
     return bgmInstance;
   }
 
-  var PhonicsAudio = {
+  const PhonicsAudio = {
     isMuted: function () {
       return isMuted;
     },
@@ -51,7 +51,7 @@
       isMuted = !isMuted;
       localStorage.setItem("PP_AUDIO_MUTED", isMuted ? "true" : "false");
       
-      var btn = document.getElementById("global-sound-btn");
+      const btn = document.getElementById("global-sound-btn");
       if (btn) {
         btn.textContent = isMuted ? "🔇" : "🔊";
       }
@@ -60,8 +60,8 @@
         if (bgmInstance) bgmInstance.pause();
       } else {
         if (!isTeacherPage) {
-          var music = getBgm();
-          music.play().catch(function (e) {
+          const music = getBgm();
+          music.play().catch(function (e) /* eslint-disable-line no-unused-vars */ {
             console.log("BGM play failed on unmute:", e.message);
           });
         }
@@ -72,12 +72,12 @@
     playSound: function (filename, volume) {
       if (isMuted) return;
       try {
-        var snd = new Audio(audioBase + filename);
+        const snd = new Audio(audioBase + filename);
         snd.volume = volume || 0.4;
-        snd.play().catch(function (e) {
+        snd.play().catch(function (e) /* eslint-disable-line no-unused-vars */ {
           // Playback blocked by browser policy
         });
-      } catch (e) {
+      } catch (e) /* eslint-disable-line no-unused-vars */ {
         console.error("Failed to play sound: " + filename, e);
       }
     },
@@ -110,8 +110,8 @@
 
     resumeBgm: function () {
       if (isMuted || isTeacherPage) return;
-      var music = getBgm();
-      music.play().catch(function (e) {
+      const music = getBgm();
+      music.play().catch(function (e) /* eslint-disable-line no-unused-vars */ {
         // Ignored
       });
     }
@@ -123,8 +123,8 @@
     interactionInitialized = true;
     
     if (!isMuted && !isTeacherPage) {
-      var music = getBgm();
-      music.play().catch(function (e) {
+      const music = getBgm();
+      music.play().catch(function (e) /* eslint-disable-line no-unused-vars */ {
         // Failed, reset so we try again on next interaction
         interactionInitialized = false;
       });
@@ -138,13 +138,13 @@
   // Try to play BGM automatically on load if allowed
   if (!isMuted && !isTeacherPage) {
     try {
-      var music = getBgm();
+      const music = getBgm();
       music.play().then(function () {
         interactionInitialized = true;
-      }).catch(function (e) {
+      }).catch(function (e) /* eslint-disable-line no-unused-vars */ {
         // Blocked by browser autoplay policy
       });
-    } catch (e) {}
+    } catch (e) /* eslint-disable-line no-unused-vars */ { /* ignore */ }
   }
 
   // Export to window
@@ -153,7 +153,7 @@
   // Initialize UI and listeners on DOMContentLoaded
   function init() {
     // Add floating mute button
-    var btn = document.getElementById("global-sound-btn");
+    let btn = document.getElementById("global-sound-btn");
     if (!btn) {
       btn = document.createElement("button");
       btn.id = "global-sound-btn";
@@ -161,7 +161,7 @@
       btn.setAttribute("aria-label", "Toggle Sound");
 
       // Append to scale-root if exists, otherwise body
-      var root = document.getElementById("scale-root");
+      const root = document.getElementById("scale-root");
       if (root) {
         root.appendChild(btn);
       } else {
@@ -171,7 +171,7 @@
 
     // Always sync text content and click listener
     btn.textContent = isMuted ? "🔇" : "🔊";
-    btn.onclick = function (e) {
+    btn.onclick = function (e) /* eslint-disable-line no-unused-vars */ {
       e.preventDefault();
       e.stopPropagation();
       PhonicsAudio.toggleMute();
@@ -190,26 +190,26 @@
     window.addEventListener("keydown", initInteraction);
 
     // Event delegation for general UI clicks and hovers
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", function (e) /* eslint-disable-line no-unused-vars */ {
       // Don't play click sound on the sound toggle itself
       if (e.target.closest("#global-sound-btn")) return;
 
-      var trigger = e.target.closest("a, button, .card, .btn, .enable-btn, .nav-btn, .again-btn, .exit-btn");
+      const trigger = e.target.closest("a, button, .card, .btn, .enable-btn, .nav-btn, .again-btn, .exit-btn");
       if (trigger) {
         PhonicsAudio.playClick();
       }
     });
 
-    document.addEventListener("mouseover", function (e) {
-      var trigger = e.target.closest("a.card, .enable-btn, .again-btn");
+    document.addEventListener("mouseover", function (e) /* eslint-disable-line no-unused-vars */ {
+      const trigger = e.target.closest("a.card, .enable-btn, .again-btn");
       if (trigger && !trigger.dataset.hoverSoundPlayed) {
         trigger.dataset.hoverSoundPlayed = "true";
         PhonicsAudio.playHover();
       }
     });
 
-    document.addEventListener("mouseout", function (e) {
-      var trigger = e.target.closest("a.card, .enable-btn, .again-btn");
+    document.addEventListener("mouseout", function (e) /* eslint-disable-line no-unused-vars */ {
+      const trigger = e.target.closest("a.card, .enable-btn, .again-btn");
       if (trigger) {
         delete trigger.dataset.hoverSoundPlayed;
       }

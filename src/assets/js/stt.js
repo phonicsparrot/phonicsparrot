@@ -2,14 +2,14 @@
  * stt.js — Phonics Parrot Speech-to-Text Engine  v3.1
  */
 
-var PhonicsSTT = (function () {
+const PhonicsSTT = /* eslint-disable-line no-unused-vars */ (function () {
   "use strict";
 
-  var MAX_RETRIES       = 3;
-  var SILENCE_TIMEOUT_MS = 8000;
-  var RESTART_DELAY_MS  = 150;
+  const MAX_RETRIES       = 3;
+  const SILENCE_TIMEOUT_MS = /* eslint-disable-line no-unused-vars */ 8000;
+  const RESTART_DELAY_MS  = 150;
 
-  var ERROR_MAP = {
+  const ERROR_MAP = {
     "not-allowed":            { type: "perm",    message: "Microphone blocked — check browser permissions." },
     "no-speech":              { type: "silence", message: "No speech detected — speak louder!" },
     "audio-capture":          { type: "device",  message: "Microphone disconnected or busy." },
@@ -38,8 +38,8 @@ var PhonicsSTT = (function () {
     }
     this.onRecording  = options.onRecording || function (blob, phrase) {
       if (typeof saveRecording === "function") {
-        var activityName = "activity";
-        var path = window.location.pathname;
+        let activityName = "activity";
+        const path = window.location.pathname;
         if (path.indexOf("builder") >= 0) activityName = "builder";
         else if (path.indexOf("speak") >= 0) activityName = "speak";
         else if (path.indexOf("reader") >= 0) activityName = "reader";
@@ -66,8 +66,8 @@ var PhonicsSTT = (function () {
 
   PhonicsSTT.prototype._makeRec = function () {
     if (!this._SR) return null;
-    var self = this;
-    var rec  = new this._SR();
+    const self = this;
+    const rec  = new this._SR();
 
     rec.lang            = "en-GB";
     rec.interimResults  = true;
@@ -81,8 +81,8 @@ var PhonicsSTT = (function () {
     rec.onresult = function (event) {
       self._lastHeard = Date.now();
 
-      var transcript = "";
-      for (var i = 0; i < event.results.length; i++) {
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
         if (i < event.results.length - 1) transcript += " ";
       }
@@ -91,7 +91,7 @@ var PhonicsSTT = (function () {
 
       self.onInterim(transcript);
 
-      var last = event.results[event.resultIndex];
+      const last = event.results[event.resultIndex];
       if (last && last.isFinal) {
         self._gotFinal = true;
         self._retryCount = 0;
@@ -103,7 +103,7 @@ var PhonicsSTT = (function () {
 
     rec.onerror = function (event) {
       self._running = false;
-      var classified = classifyError(event.error);
+      const classified = classifyError(event.error);
 
       if (classified.type === "aborted") return;
 
@@ -113,7 +113,7 @@ var PhonicsSTT = (function () {
             self._useOfflineFallback = true;
             self.onStatus("recording", "Offline Mode — local transcription active.");
             if (self._rec) {
-              try { self._rec.abort(); } catch(_) {}
+              try { self._rec.abort(); } catch(_) { /* ignore */ }
             }
             self._startSilenceMonitor();
             self._startAudioRecording();
@@ -156,7 +156,7 @@ var PhonicsSTT = (function () {
   };
 
   PhonicsSTT.prototype._scheduleRestart = function () {
-    var self = this;
+    const self = this;
     if (self._restartId !== null) {
       clearTimeout(self._restartId);
       self._restartId = null;
@@ -181,13 +181,13 @@ var PhonicsSTT = (function () {
       return;
     }
     this._retryCount++;
-    var delay = Math.min(300 * Math.pow(2, this._retryCount), 3000);
+    const delay = Math.min(300 * Math.pow(2, this._retryCount), 3000);
     this.onStatus(
       "retrying",
       "Retry " + this._retryCount + "/" + MAX_RETRIES +
       " in " + Math.round(delay / 1000) + "s…"
     );
-    var self = this;
+    const self = this;
     if (self._restartId !== null) {
       clearTimeout(self._restartId);
       self._restartId = null;
@@ -211,7 +211,7 @@ var PhonicsSTT = (function () {
       this._rec.start();
     } catch (e) {
       this._running = false;
-      var self = this;
+      const self = this;
       setTimeout(function () { self._scheduleRestart(); }, 200);
     }
   };
@@ -219,19 +219,19 @@ var PhonicsSTT = (function () {
   PhonicsSTT.prototype._startSilenceMonitor = function () {
     if (this.continuous) return;
     this._stopSilenceMonitor();
-    var self = this;
+    const self = this;
 
     this._silenceId = setInterval(function () {
-      var elapsed = Date.now() - self._lastHeard;
-      var timeout = 8000;
+      const elapsed = Date.now() - self._lastHeard;
+      let timeout = 8000;
 
       if (self._latestTranscript && self._latestTranscript.trim().length > 0) {
         timeout = 2500;
         if (self._currentPhrase) {
-          var targetWords = self._currentPhrase.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
-          var spokenWords = self._latestTranscript.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
-          var lastTargetWord = targetWords[targetWords.length - 1];
-          var hasSpokenLast = lastTargetWord && spokenWords.indexOf(lastTargetWord) !== -1;
+          const targetWords = self._currentPhrase.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
+          const spokenWords = self._latestTranscript.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);
+          const lastTargetWord = targetWords[targetWords.length - 1];
+          const hasSpokenLast = lastTargetWord && spokenWords.indexOf(lastTargetWord) !== -1;
           if (spokenWords.length >= targetWords.length || hasSpokenLast) {
             timeout = 1000;
           }
@@ -281,7 +281,7 @@ var PhonicsSTT = (function () {
 
   PhonicsSTT.prototype._startAudioRecording = function () {
     if (!this._recordAudio) return;
-    var self = this;
+    const self = this;
     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
       if (!self._active) {
         stream.getTracks().forEach(function (t) { t.stop(); });
@@ -290,23 +290,23 @@ var PhonicsSTT = (function () {
       self._micStream = stream;
       self._audioChunks = [];
       try {
-        var mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus" : "audio/webm";
         self._mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
       } catch (e) {
         self._mediaRecorder = new MediaRecorder(stream);
       }
-      var recorder = self._mediaRecorder;
+      const recorder = self._mediaRecorder;
       self._mediaRecorder.ondataavailable = function (e) {
         if (e.data && e.data.size > 0) self._audioChunks.push(e.data);
       };
       self._mediaRecorder.onstop = function () {
         if (self._audioChunks && self._audioChunks.length > 0) {
-          var blob = new Blob(self._audioChunks, { type: (recorder && recorder.mimeType) || "audio/webm" });
+          const blob = new Blob(self._audioChunks, { type: (recorder && recorder.mimeType) || "audio/webm" });
 
           if (self._useOfflineFallback) {
             self.onStatus("processing", "Transcribing offline...");
-            var transcribeUrl = "/api/transcribe";
+            const transcribeUrl = "/api/transcribe";
             fetch(transcribeUrl, {
               method: "POST",
               headers: { "Content-Type": "application/octet-stream" },
@@ -315,7 +315,7 @@ var PhonicsSTT = (function () {
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (data && data.ok) {
-                var txt = data.transcript || "";
+                const txt = data.transcript || "";
                 self.onFinal(txt);
                 self.onStatus("stopped", "Offline transcription complete.");
               } else {
@@ -350,7 +350,7 @@ var PhonicsSTT = (function () {
           this._mediaRecorder.requestData();
         }
         this._mediaRecorder.stop();
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
     }
     this._mediaRecorder = null;
   };
@@ -367,14 +367,14 @@ var PhonicsSTT = (function () {
     this._stopSilenceMonitor();
     this._stopAudioRecording();
 
-    var msg = reason === "silence" ? "No speech detected — stopped listening."
+    const msg = reason === "silence" ? "No speech detected — stopped listening."
             : reason === "error"   ? "Stopped due to error."
             : "Stopped listening.";
     this.onStatus("stopped", msg, reason || "manual");
     if (window.PhonicsAudio) window.PhonicsAudio.resumeBgm();
 
     if (this._rec && this._running) {
-      try { this._rec.abort(); } catch (_) {}
+      try { this._rec.abort(); } catch (_) { /* ignore */ }
     }
     this._rec = null;
 
