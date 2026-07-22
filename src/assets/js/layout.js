@@ -226,7 +226,7 @@ function safeSpeak(text, opts) {
 
 /* ── PWA Service Worker (browser-only, no-op in Tauri) ──────── */
 
-(function () {
+(function registerSW() {
   // Skip in Tauri/WebView — not supported, produces silent errors
   if (typeof window.__TAURI__ !== "undefined") return;
   if (!("serviceWorker" in navigator)) return;
@@ -244,7 +244,7 @@ function safeSpeak(text, opts) {
 })();
 
 /* ── INTERACTIVE DEBUG FEEDBACK SYSTEM ───────────────────────── */
-(function () {
+(function initDebugFeedback() {
   document.addEventListener("DOMContentLoaded", function () {
     var configUrl = "/api/config";
     if (window.location.pathname.indexOf("activities/") !== -1) {
