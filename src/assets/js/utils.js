@@ -239,6 +239,7 @@ async function requestMicPermission(onSuccess, onError) {
  * Non-intrusive check: returns true only if permission is already "granted".
  * Does NOT prompt the user.
  */
+// eslint-disable-next-line no-unused-vars
 async function checkMicPermission() {
   try {
     if (navigator.permissions && navigator.permissions.query) {
