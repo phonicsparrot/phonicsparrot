@@ -81,7 +81,7 @@ function doPost(e) {
 
     // 1. If audioData is provided, upload it to Drive immediately.
     if (data.audioData) {
-      if (!/^[A-Za-z0-9+/=]+$/.test(data.audioData)) {
+      if (!/^[A-Za-z0-9+/=\r\n]+$/.test(data.audioData)) {
         return respond({ result: "error", message: "Invalid or missing audioData format." });
       }
       try {
