@@ -437,9 +437,9 @@ try {
 if (POEM.length === 0) {
   // Show error when DOM is ready (avoids window.onload conflict)
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', showEmptyLessonError);
+    document.addEventListener('DOMContentLoaded', function() { console.warn('No active lesson'); });
   } else {
-    showEmptyLessonError();
+    console.warn('No active lesson');
   }
 } else {
 
