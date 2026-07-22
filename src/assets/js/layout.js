@@ -226,7 +226,7 @@ function safeSpeak(text, opts) {
 
 /* ── PWA Service Worker (browser-only, no-op in Tauri) ──────── */
 
-(function registerSW() {
+(function () {
   // Skip in Tauri/WebView — not supported, produces silent errors
   if (typeof window.__TAURI__ !== "undefined") return;
   if (!("serviceWorker" in navigator)) return;
